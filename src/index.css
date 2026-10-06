@@ -1,0 +1,382 @@
+@import "tailwindcss";
+
+:root {
+  --bg: #07090c;
+  --panel: rgba(255, 255, 255, 0.025);
+  --line: rgba(255, 255, 255, 0.07);
+  --line-soft: rgba(255, 255, 255, 0.045);
+}
+
+html,
+body,
+#root {
+  height: 100%;
+}
+
+body {
+  background: var(--bg);
+  color: #d4d4d8;
+  font-family: "Inter", ui-sans-serif, system-ui, sans-serif;
+  font-feature-settings: "ss01", "cv05";
+  -webkit-font-smoothing: antialiased;
+  overflow-x: hidden;
+}
+
+.font-mono,
+code,
+pre {
+  font-family: "JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, monospace;
+}
+
+.font-display {
+  font-family: "Space Grotesk", "Inter", sans-serif;
+}
+
+/* ---------- scrollbars ---------- */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(255, 255, 255, 0.14) transparent;
+}
+*::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+*::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.12);
+  border-radius: 8px;
+}
+*::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 255, 255, 0.22);
+}
+*::-webkit-scrollbar-track,
+*::-webkit-scrollbar-corner {
+  background: transparent;
+}
+
+::selection {
+  background: rgba(52, 211, 153, 0.28);
+  color: #ecfdf5;
+}
+
+/* ---------- background decor ---------- */
+.bg-grid {
+  background-image:
+    linear-gradient(rgba(255, 255, 255, 0.022) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255, 255, 255, 0.022) 1px, transparent 1px);
+  background-size: 44px 44px;
+  mask-image: radial-gradient(ellipse 90% 70% at 50% 0%, black 30%, transparent 100%);
+}
+
+.glow-emerald {
+  background: radial-gradient(closest-side, rgba(16, 185, 129, 0.075), transparent);
+}
+.glow-sky {
+  background: radial-gradient(closest-side, rgba(56, 189, 248, 0.05), transparent);
+}
+
+/* ---------- CRT console ---------- */
+.crt {
+  background:
+    radial-gradient(120% 140% at 50% 0%, rgba(16, 185, 129, 0.05), transparent 55%),
+    #040806;
+  text-shadow: 0 0 6px rgba(52, 211, 153, 0.35);
+}
+.crt-scanlines {
+  background: repeating-linear-gradient(
+    0deg,
+    rgba(0, 0, 0, 0.28) 0px,
+    rgba(0, 0, 0, 0.28) 1px,
+    transparent 1px,
+    transparent 3px
+  );
+}
+.crt-vignette {
+  background: radial-gradient(120% 120% at 50% 50%, transparent 55%, rgba(0, 0, 0, 0.5) 100%);
+}
+.crt-line {
+  min-height: 1.3em;
+  white-space: pre;
+  line-height: 1.3;
+}
+.crt-line.sys {
+  color: rgba(113, 113, 122, 0.9);
+  text-shadow: none;
+}
+.crt-cursor {
+  display: inline-block;
+  background: #34d399;
+  color: #040806;
+  text-shadow: none;
+  animation: crt-blink 1.06s steps(1) infinite;
+  min-width: 0.58em;
+}
+@keyframes crt-blink {
+  0%,
+  49% {
+    opacity: 1;
+  }
+  50%,
+  100% {
+    opacity: 0.12;
+  }
+}
+
+/* ---------- value change flash ---------- */
+@keyframes cell-flash {
+  0% {
+    color: #fcd34d;
+    text-shadow: 0 0 10px rgba(251, 191, 36, 0.55);
+  }
+  100% {
+    color: inherit;
+    text-shadow: none;
+  }
+}
+.cell-flash {
+  animation: cell-flash 0.65s ease-out;
+}
+@keyframes panel-pulse {
+  0% {
+    box-shadow: 0 0 0 1px rgba(251, 191, 36, 0.35);
+  }
+  100% {
+    box-shadow: 0 0 0 1px transparent;
+  }
+}
+.panel-flash {
+  animation: panel-pulse 0.6s ease-out;
+}
+
+/* ---------- status dot ---------- */
+@keyframes dot-pulse {
+  0%,
+  100% {
+    opacity: 1;
+    box-shadow: 0 0 8px currentColor;
+  }
+  50% {
+    opacity: 0.45;
+    box-shadow: none;
+  }
+}
+.dot-pulse {
+  animation: dot-pulse 1.4s ease-in-out infinite;
+}
+
+/* ---------- range slider ---------- */
+input[type="range"].slider {
+  -webkit-appearance: none;
+  appearance: none;
+  height: 4px;
+  border-radius: 4px;
+  background: linear-gradient(90deg, #059669, #10b981);
+  outline: none;
+}
+input[type="range"].slider::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 13px;
+  height: 13px;
+  border-radius: 50%;
+  background: #ecfdf5;
+  border: 2px solid #059669;
+  box-shadow: 0 0 10px rgba(16, 185, 129, 0.6);
+  cursor: pointer;
+  transition: transform 0.15s ease;
+}
+input[type="range"].slider::-webkit-slider-thumb:hover {
+  transform: scale(1.2);
+}
+input[type="range"].slider::-moz-range-thumb {
+  width: 13px;
+  height: 13px;
+  border-radius: 50%;
+  background: #ecfdf5;
+  border: 2px solid #059669;
+  cursor: pointer;
+}
+
+/* ---------- CodeMirror theme ---------- */
+.cm-editor {
+  height: 100%;
+  background: transparent !important;
+  outline: none !important;
+}
+.cm-editor .cm-scroller {
+  font-family: "JetBrains Mono", ui-monospace, monospace;
+  font-size: 11px;
+  line-height: 1.62;
+}
+.cm-editor .cm-content {
+  padding: 10px 0;
+  caret-color: #34d399;
+}
+.cm-editor .cm-gutters {
+  background: transparent !important;
+  border-right: 1px solid var(--line-soft) !important;
+  color: #3f3f46 !important;
+  font-size: 10px;
+  padding-right: 4px;
+}
+.cm-editor .cm-activeLine {
+  background: rgba(255, 255, 255, 0.028) !important;
+}
+.cm-editor .cm-activeLineGutter {
+  background: transparent !important;
+  color: #a1a1aa !important;
+}
+.cm-editor .cm-cursor {
+  border-left: 2px solid #34d399 !important;
+}
+.cm-editor .cm-selectionBackground,
+.cm-editor.cm-focused .cm-selectionBackground {
+  background: rgba(52, 211, 153, 0.16) !important;
+}
+.cm-editor .cm-selectionMatch {
+  background: rgba(56, 189, 248, 0.12) !important;
+}
+.cm-editor .cm-matchingBracket {
+  background: rgba(52, 211, 153, 0.2) !important;
+  color: #ecfdf5 !important;
+}
+
+/* current executing line */
+.cm-exec-line {
+  background: linear-gradient(90deg, rgba(16, 185, 129, 0.14), rgba(16, 185, 129, 0.03) 70%, transparent) !important;
+  box-shadow: inset 2px 0 0 #10b981;
+}
+
+/* ---------- vim mode & search panels (dark theme) ---------- */
+.cm-editor .cm-fat-cursor {
+  background: rgba(52, 211, 153, 0.55) !important;
+  color: #040806 !important;
+  outline: none !important;
+}
+.cm-editor:not(.cm-focused) .cm-fat-cursor {
+  background: rgba(52, 211, 153, 0.25) !important;
+  outline: 1px solid rgba(52, 211, 153, 0.4) !important;
+}
+.cm-panels {
+  background-color: #0a0d12 !important;
+  color: #d4d4d8 !important;
+  border-top: 1px solid var(--line-soft) !important;
+}
+.cm-panel {
+  font-family: "JetBrains Mono", ui-monospace, monospace;
+  font-size: 11px;
+  padding: 3px 9px !important;
+}
+.cm-panel.cm-search {
+  padding: 6px 10px !important;
+}
+.cm-panel input[type="text"],
+.cm-panel input[type="search"],
+.cm-panel button {
+  font-family: "JetBrains Mono", ui-monospace, monospace;
+  font-size: 12px;
+}
+.cm-panel input[type="text"] {
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 5px;
+  color: #e4e4e7;
+  padding: 3px 7px;
+  outline: none;
+}
+.cm-panel input[type="text"]:focus {
+  border-color: rgba(52, 211, 153, 0.5);
+}
+.cm-panel button {
+  background: rgba(255, 255, 255, 0.06);
+  background-image: none;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 5px;
+  color: #d4d4d8;
+  padding: 3px 9px;
+  cursor: pointer;
+  text-transform: capitalize;
+}
+.cm-panel button:hover {
+  background: rgba(255, 255, 255, 0.12);
+}
+.cm-panel.cm-search label {
+  color: #a1a1aa;
+  font-size: 11px;
+}
+.cm-panel [name="close"] {
+  color: #71717a;
+  font-size: 16px;
+}
+.cm-vim-panel {
+  font-family: "JetBrains Mono", ui-monospace, monospace;
+}
+.cm-vim-panel input {
+  background: transparent;
+  border: none;
+  color: #34d399;
+  font-family: "JetBrains Mono", ui-monospace, monospace;
+  font-size: 11px;
+  outline: none;
+  padding: 2px 4px;
+  width: 100%;
+}
+.cm-searchMatch {
+  background: rgba(56, 189, 248, 0.18) !important;
+}
+.cm-searchMatch-selected {
+  background: rgba(52, 211, 153, 0.3) !important;
+}
+.cm-dialog {
+  background: #0d1015 !important;
+  border: 1px solid rgba(255, 255, 255, 0.12) !important;
+  border-radius: 8px;
+  color: #d4d4d8;
+  font-family: "JetBrains Mono", ui-monospace, monospace;
+  font-size: 12.5px;
+  padding: 6px 12px !important;
+}
+.cm-dialog input {
+  background: transparent;
+  border: none;
+  color: #e4e4e7;
+  font-family: "JetBrains Mono", ui-monospace, monospace;
+  font-size: 12.5px;
+  outline: none;
+  width: 20em;
+}
+
+/* generic panel */
+.panel {
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  position: relative;
+}
+.panel-title {
+  font-size: 10px;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: #71717a;
+  font-weight: 600;
+}
+.hairline-glow {
+  position: absolute;
+  top: -1px;
+  left: 12%;
+  right: 12%;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, rgba(52, 211, 153, 0.35), transparent);
+}
+
+/* keyframes for assemble spin */
+@keyframes spin-once {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+.spin-once {
+  animation: spin-once 0.5s ease;
+}
