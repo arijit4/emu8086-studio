@@ -11,7 +11,7 @@ import ConsolePanel from "./components/ConsolePanel";
 import Splitter from "./components/Splitter";
 import { cn, hex, fmtCount } from "./utils";
 
-const SPEEDS = [1, 10, 100, 1000, 5000, 25000, 150000, 2000000];
+const SPEEDS = [1, 2, 3, 10, 100, 1000, 15000, 2000000];
 
 /* default split ratios (percent of the container) */
 const DEFAULTS = { col: 58, editor: 64, cpu: 46 };
@@ -29,8 +29,8 @@ export default function App() {
   const [snap, setSnap] = useState<Snapshot>(() => machine.snapshot());
   const [code, setCode] = useState(EXAMPLES[0].code);
   const [activeExample, setActiveExample] = useState(EXAMPLES[0].title);
-  const [speedIdx, setSpeedIdx] = useState(3);
-  const [vimOn, setVimOn] = useState(true);
+  const [speedIdx, setSpeedIdx] = useState(1);
+  const [vimOn, setVimOn] = useState(false);
   const viewRef = useRef<EditorView | null>(null);
 
   /* ---------- resizable layout ---------- */
