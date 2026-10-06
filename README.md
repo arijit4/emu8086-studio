@@ -1,5 +1,4 @@
 <h2 style="text-align: center;">emu8086 Studio</h2>
----
 
 This project is being developed as an alternative to the __*OG emu8086*__
 which have been discontinued long long time ago. The goal of this project
