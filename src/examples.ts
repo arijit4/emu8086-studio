@@ -7,6 +7,75 @@ export interface Example {
 
 export const EXAMPLES: Example[] = [
   {
+    id: "ex0",
+    title: "Hello!",
+    tag: "Get started with emu8086 studio",
+    code: `; Click "Run" (or Ctrl+Enter) to execute the program.
+
+.model small
+.stack 100h
+
+.DATA
+    line01 DB '  ______ __  __ _    _  ___   ___   ___    __   ', 13, 10, '$'
+    line02 DB ' |  ____|  \\/  | |  | |/ _ \\ / _ \\ / _ \\  / /   ', 13, 10, '$'
+    line03 DB ' | |__  | \\  / | |  | | (_) | | | | (_) |/ /_   ', 13, 10, '$'
+    line04 DB ' |  __| | |\\/| | |  | |> _ <| | | |> _ <| \\_ \\  ', 13, 10, '$'
+    line05 DB ' | |____| |  | | |__| | (_) | |_| | (_) |\\_/ /  ', 13, 10, '$'
+    line06 DB ' |______|_|  |_|\\____/ \\___/ \\___/ \\___/  /_/   ', 13, 10, '$'
+    line07 DB '                                                ', 13, 10, '$'
+    line08 DB '      _____ _______ _    _ _____ _____ ____     ', 13, 10, '$'
+    line09 DB '     / ____|__   __| |  | |  __ \\_   _/ __ \\    ', 13, 10, '$'
+    line10 DB '    | (___    | |  | |  | | |  | || || |  | |   ', 13, 10, '$'
+    line11 DB '     \\___ \\   | |  | |  | | |  | || || |  | |   ', 13, 10, '$'
+    line12 DB '     ____) |  | |  | |__| | |__| || || |__| |   ', 13, 10, '$'
+    line13 DB '    |_____/   |_|   \\____/|_____/_____\\____/    ', 13, 10, '$'
+    line14 DB '                                                ', 13, 10, '$'
+.CODE
+MAIN PROC
+    MOV AX, @DATA
+    MOV DS, AX
+
+    MOV AH, 09h
+
+    LEA DX, line01
+    INT 21h
+    LEA DX, line02
+    INT 21h
+    LEA DX, line03
+    INT 21h
+    LEA DX, line04
+    INT 21h
+    LEA DX, line05
+    INT 21h
+    LEA DX, line06
+    INT 21h
+    LEA DX, line07
+    INT 21h
+    LEA DX, line08
+    INT 21h
+    LEA DX, line09
+    INT 21h
+    LEA DX, line10
+    INT 21h
+    LEA DX, line11
+    INT 21h
+    LEA DX, line12
+    INT 21h
+    LEA DX, line13
+    INT 21h
+    LEA DX, line14
+    INT 21h
+
+    MOV AH, 00h
+    INT 16h
+
+    MOV AH, 4Ch
+    INT 21h
+    MAIN ENDP
+END START
+    `
+  },
+  {
     id: "ex1",
     title: "Print & Echo Basics",
     tag: "AH=02 / 09 string + char output",

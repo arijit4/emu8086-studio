@@ -133,7 +133,8 @@ pre {
   }
 }
 .cell-flash {
-  animation: cell-flash 0.65s ease-out;
+  color: #fcd34d !important;
+  text-shadow: 0 0 8px rgba(251, 191, 36, 0.45);
 }
 @keyframes panel-pulse {
   0% {

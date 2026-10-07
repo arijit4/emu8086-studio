@@ -9,6 +9,7 @@ import CpuPanel from "./components/CpuPanel";
 import MemoryPanel from "./components/MemoryPanel";
 import ConsolePanel from "./components/ConsolePanel";
 import Splitter from "./components/Splitter";
+import UpdateNotice from "./components/UpdateNotice";
 import { cn, hex, fmtCount } from "./utils";
 
 const SPEEDS = [1, 2, 3, 10, 100, 1000, 15000, 2000000];
@@ -119,6 +120,7 @@ export default function App() {
 
   return (
     <div className="relative flex h-screen flex-col overflow-hidden bg-[#07090c] text-zinc-300">
+      <UpdateNotice />
       {/* background decor */}
       <div className="bg-grid pointer-events-none absolute inset-0" />
       <div className="glow-emerald pointer-events-none absolute -top-40 left-1/2 h-[420px] w-[720px] -translate-x-1/2" />

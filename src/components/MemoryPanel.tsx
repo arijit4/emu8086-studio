@@ -43,7 +43,7 @@ export default function MemoryPanel({
   })();
 
   const base = parseHex(offStr, 0) & 0xfff0;
-  const writes = useMemo(() => new Set(snap.writes), [snap.writes]);
+  const lastWrites = useMemo(() => new Set(snap.writes), [snap.writes]);
   const labelAt = useMemo(() => {
     const m = new Map<number, string>();
     for (const l of snap.dataLabels) m.set(l.offset, l.name);
@@ -144,14 +144,18 @@ export default function MemoryPanel({
                     {Array.from({ length: COLS }).map((_, c) => {
                       const p = (rowPhys + c) & 0xfffff;
                       const v = mem[p];
-                      const hit = writes.has(p);
+                      const hit = lastWrites.has(p);
                       return (
                         <span
                           key={c}
                           title={`${hex(segVal)}:${hex((rowOff + c) & 0xffff)} = ${v.toString(10)}`}
                           className={cn(
                             "inline-block w-[26px] rounded-[3px] text-center",
-                            hit ? "bg-sky-400/20 text-sky-200" : v === 0 ? "text-zinc-700" : "text-zinc-300",
+                            hit
+                              ? "bg-amber-400/20 text-amber-200 [text-shadow:0_0_8px_rgba(251,191,36,0.45)]"
+                              : v === 0
+                                ? "text-zinc-700"
+                                : "text-zinc-300",
                             c === 7 && "mr-3"
                           )}
                         >

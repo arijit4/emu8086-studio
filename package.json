@@ -1,9 +1,11 @@
 {
   "name": "react-vite-tailwind",
   "private": true,
-  "version": "0.0.0",
+  "version": "0.2.0",
   "type": "module",
   "scripts": {
+    "prebuild": "node scripts/sync-version.mjs",
+    "pretauri": "node scripts/sync-version.mjs",
     "tauri": "tauri",
     "dev": "vite",
     "build": "vite build",

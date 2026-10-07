@@ -1,6 +1,6 @@
 <h2 style="text-align: center;">emu8086 Studio</h2>
 
-This project is being developed as an alternative to the __*OG emu8086*__
+This project is being developed as an alternative to the __OG *emu8086*__
 which have been discontinued long long time ago. The goal of this project
 is to provide a modern and user-friendly environment for developing and testing
 assembly language programs for the Intel 8086 microprocessor.
@@ -15,13 +15,12 @@ Features supported out-of-the-box:
 
 | Feature                                 | emu8086 Studio | emu8086 |
 |-----------------------------------------|----------------|---------|
-| Syntax highlighting                     | ✅              | ✅       |
 | Integrated memory and CPU visualization | ✅              | ✅       |
-| Assembly directives and instructions    | ✅              | ✅       |
-| Assembly code simulation                | ✅              | ✅       |
+| Complex assembly code simulation        | ✅              | ✅       |
+| Variable emulation speed                | ✅              | ✅       |
 | `STEP FORWORD`, `PAUSE`, `RESUME`       | ✅              | ✅       |
 | `STEP BACK`                             | ✅              | ❌       |
-| Variable emulation speed                | ✅              | ✅       |
+| Token level syntax highlighting         | ✅              | ❌       |
 | VIM keybindings                         | ✅              | ❌       |
 | Dark theme                              | ✅              | ❌       |
 | Run without saving to disk              | ✅              | ❌       |

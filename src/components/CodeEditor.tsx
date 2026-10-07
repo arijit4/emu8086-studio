@@ -108,7 +108,14 @@ export default function CodeEditor({
   useEffect(() => {
     const view = viewRef.current;
     if (!view) return;
-    view.dispatch({ effects: setExecLine.of(running || execLine !== null ? execLine : null) });
+    const activeLine = running || execLine !== null ? execLine : null;
+    const effects: Array<StateEffect<unknown>> = [setExecLine.of(activeLine) as StateEffect<unknown>];
+
+    if (running && activeLine !== null && activeLine >= 1 && activeLine <= view.state.doc.lines) {
+      effects.push(EditorView.scrollIntoView(view.state.doc.line(activeLine).from, { y: "nearest", yMargin: 24 }));
+    }
+
+    view.dispatch({ effects });
   }, [execLine, running]);
 
   return (

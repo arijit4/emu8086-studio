@@ -3,13 +3,20 @@ import { Cpu, Binary, ChevronDown, ChevronUp, Flag } from "lucide-react";
 import type { Snapshot } from "../emulator/machine";
 import { cn, hex, bin } from "../utils";
 
-/* flash when a value changes */
-function useChanged(v: number): boolean {
+/* Highlight a value only when it changed in the latest machine snapshot. */
+function useChanged(v: number, changeKey: number): boolean {
   const ref = useRef(v);
-  const changed = ref.current !== v;
+  const [changed, setChanged] = useState(false);
+  const keyRef = useRef(changeKey);
+
   useEffect(() => {
-    ref.current = v;
-  });
+    if (keyRef.current !== changeKey) {
+      setChanged(ref.current !== v);
+      ref.current = v;
+      keyRef.current = changeKey;
+    }
+  }, [changeKey, v]);
+
   return changed;
 }
 
@@ -17,16 +24,18 @@ function Cell({
   value,
   w = 4,
   mode,
+  changeKey,
   className,
   dim,
 }: {
   value: number;
   w?: number;
   mode: "hex" | "dec" | "bin";
+  changeKey: number;
   className?: string;
   dim?: boolean;
 }) {
-  const changed = useChanged(value);
+  const changed = useChanged(value, changeKey);
   const txt =
     mode === "hex"
       ? hex(value, w)
@@ -57,7 +66,7 @@ const GP = [
   { name: "DX", i: 2, hi: "DH", lo: "DL" },
 ];
 
-function GeneralTable({ regs, binMode }: { regs: number[]; binMode: boolean }) {
+function GeneralTable({ regs, binMode, changeKey }: { regs: number[]; binMode: boolean; changeKey: number }) {
   return (
     <table className="w-full table-fixed border-collapse font-mono text-[11px]">
       <thead>
@@ -80,19 +89,19 @@ function GeneralTable({ regs, binMode }: { regs: number[]; binMode: boolean }) {
             <tr key={g.name} className="border-t border-white/[0.04] hover:bg-white/[0.03]">
               <td className="py-[3px] text-left font-bold tracking-wider text-emerald-400/70">{g.name}</td>
               <td className="py-[3px] text-right">
-                <Cell value={v} mode={binMode ? "bin" : "hex"} />
+                <Cell value={v} mode={binMode ? "bin" : "hex"} changeKey={changeKey} />
                 {!binMode && <span className="text-zinc-600">h</span>}
               </td>
               <td className="py-[3px] text-right">
-                <Cell value={v} mode="dec" className="text-zinc-400" dim />
+                <Cell value={v} mode="dec" changeKey={changeKey} className="text-zinc-400" dim />
               </td>
               {!binMode && (
                 <>
                   <td className="py-[3px] text-right">
-                    <Cell value={(v >> 8) & 0xff} w={2} mode="hex" className="text-zinc-400" dim />
+                    <Cell value={(v >> 8) & 0xff} w={2} mode="hex" changeKey={changeKey} className="text-zinc-400" dim />
                   </td>
                   <td className="py-[3px] text-right">
-                    <Cell value={v & 0xff} w={2} mode="hex" className="text-zinc-400" dim />
+                    <Cell value={v & 0xff} w={2} mode="hex" changeKey={changeKey} className="text-zinc-400" dim />
                   </td>
                 </>
               )}
@@ -109,9 +118,11 @@ function GeneralTable({ regs, binMode }: { regs: number[]; binMode: boolean }) {
 function PairTable({
   title,
   rows,
+  changeKey,
 }: {
   title: string;
   rows: Array<{ name: string; value: number; accent?: boolean }>;
+  changeKey: number;
 }) {
   return (
     <table className="w-full table-fixed border-collapse font-mono text-[11px]">
@@ -134,11 +145,11 @@ function PairTable({
               {r.name}
             </td>
             <td className="py-[3px] text-right">
-              <Cell value={r.value} mode="hex" />
+              <Cell value={r.value} mode="hex" changeKey={changeKey} />
               <span className="text-zinc-600">h</span>
             </td>
             <td className="py-[3px] text-right">
-              <Cell value={r.value} mode="dec" className="text-zinc-400" dim />
+              <Cell value={r.value} mode="dec" changeKey={changeKey} className="text-zinc-400" dim />
             </td>
           </tr>
         ))}
@@ -161,7 +172,7 @@ const FLAG_DEFS: Array<{ name: string; bit: number; full: string }> = [
   { name: "CF", bit: 0, full: "Carry Flag" },
 ];
 
-function FlagTable({ flags }: { flags: number }) {
+function FlagTable({ flags, changeKey }: { flags: number; changeKey: number }) {
   return (
     <table className="w-full table-fixed border-collapse text-center font-mono">
       <thead>
@@ -187,7 +198,7 @@ function FlagTable({ flags }: { flags: number }) {
         <tr>
           {FLAG_DEFS.map((f) => {
             const on = (flags >> f.bit) & 1;
-            return <FlagCell key={f.name} on={on} />;
+            return <FlagCell key={f.name} on={on} changeKey={changeKey} />;
           })}
         </tr>
       </tbody>
@@ -195,8 +206,8 @@ function FlagTable({ flags }: { flags: number }) {
   );
 }
 
-function FlagCell({ on }: { on: number }) {
-  const changed = useChanged(on);
+function FlagCell({ on, changeKey }: { on: number; changeKey: number }) {
+  const changed = useChanged(on, changeKey);
   return (
     <td
       className={cn(
@@ -231,6 +242,7 @@ export default function CpuPanel({
   const [binMode, setBinMode] = useState(false);
   const r = snap.regs; // AX CX DX BX SP BP SI DI
   const s = snap.segs; // ES CS SS DS
+  const changeKey = snap.cycles;
 
   return (
     <section className="panel flex h-full flex-col overflow-hidden">
@@ -238,7 +250,7 @@ export default function CpuPanel({
       <header className="flex items-center justify-between border-b border-white/[0.05] px-3 py-1.5">
         <div className="flex items-center gap-2">
           <Cpu size={11} className="text-emerald-400/80" />
-          <span className="panel-title">Central Processing Unit</span>
+          <span className="panel-title">Central Processing Unit (CPU)</span>
         </div>
         <div className="flex items-center gap-1.5">
           {!minimized && <button
@@ -267,13 +279,14 @@ export default function CpuPanel({
 
       {!minimized && <div className="space-y-2 px-2.5 py-2">
         {/* general registers */}
-        <GeneralTable regs={r} binMode={binMode} />
+        <GeneralTable regs={r} binMode={binMode} changeKey={changeKey} />
 
         {/* segments + pointers side by side */}
         <div className="flex gap-3 border-t border-white/[0.05] pt-1.5">
           <div className="flex-1">
             <PairTable
               title="Seg"
+              changeKey={changeKey}
               rows={[
                 { name: "CS", value: s[1] },
                 { name: "DS", value: s[3], accent: true },
@@ -286,6 +299,7 @@ export default function CpuPanel({
           <div className="flex-1">
             <PairTable
               title="Ptr"
+              changeKey={changeKey}
               rows={[
                 { name: "IP", value: snap.ipAddr, accent: true },
                 { name: "SP", value: r[4] },
@@ -306,7 +320,7 @@ export default function CpuPanel({
               {hex(snap.flags, 4)}h
             </span>
           </p>
-          <FlagTable flags={snap.flags} />
+          <FlagTable flags={snap.flags} changeKey={changeKey} />
         </div>
       </div>}
     </section>

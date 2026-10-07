@@ -74,7 +74,7 @@ export default function ConsolePanel({ machine, snap }: { machine: Machine; snap
       <header className="flex items-center justify-between border-b border-white/[0.05] px-3.5 py-2.5">
         <div className="flex items-center gap-2">
           <Terminal size={12} className="text-emerald-400/80" />
-          <span className="panel-title">Input / Output Console</span>
+          <span className="panel-title">Console</span>
         </div>
         <div className="flex items-center gap-2">
           {snap.status === "waiting" && (
@@ -110,13 +110,11 @@ export default function ConsolePanel({ machine, snap }: { machine: Machine; snap
         <div className="crt-scanlines pointer-events-none absolute inset-0 z-20 opacity-60" />
         <div className="crt-vignette pointer-events-none absolute inset-0 z-20" />
       </div>
-
-      <footer className="flex items-center justify-between border-t border-white/[0.05] px-3.5 py-1.5 font-mono text-[9px] tracking-wide text-zinc-600">
-        <span>INT 21h console · echo via AH=01h</span>
-        <span className={cn(snap.status === "waiting" ? "text-sky-400" : "")}>
-          {snap.status === "waiting" ? "keyboard captured" : "click here, then run a program"}
-        </span>
-      </footer>
+        {snap.status === "waiting" && (
+            <footer className="flex items-center justify-between border-t border-white/[0.05] px-3.5 py-1.5 font-mono text-[9px] tracking-wide text-zinc-600">
+                <span className="text-sky-400">keyboard captured</span>
+            </footer>
+        )}
     </section>
   );
 }
