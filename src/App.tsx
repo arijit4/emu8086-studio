@@ -31,6 +31,8 @@ export default function App() {
   const [activeExample, setActiveExample] = useState(EXAMPLES[0].title);
   const [speedIdx, setSpeedIdx] = useState(1);
   const [vimOn, setVimOn] = useState(false);
+  const [memoryMinimized, setMemoryMinimized] = useState(false);
+  const [cpuMinimized, setCpuMinimized] = useState(false);
   const viewRef = useRef<EditorView | null>(null);
 
   /* ---------- resizable layout ---------- */
@@ -155,7 +157,9 @@ export default function App() {
           {/* editor */}
           <section
             className="panel order-1 flex min-h-[380px] flex-col overflow-hidden lg:order-none lg:min-h-0"
-            style={{ flex: `0 0 ${split.editor}%` }}
+            style={{
+              flex: memoryMinimized ? "1 1 0" : `0 0 ${split.editor}%`,
+            }}
           >
             <div className="hairline-glow" />
             <header className="flex items-center justify-between gap-2 border-b border-white/[0.05] px-3.5 py-2">
@@ -233,7 +237,7 @@ export default function App() {
           </section>
 
           {/* editor / memory splitter */}
-          <div className="order-1 hidden lg:order-none lg:block">
+          <div className={cn("order-1 hidden lg:order-none lg:block", memoryMinimized && "lg:hidden")}>
             <Splitter
               dir="v"
               onStart={beginDrag("editor")}
@@ -243,8 +247,19 @@ export default function App() {
           </div>
 
           {/* memory */}
-          <div className="order-4 h-[252px] shrink-0 lg:order-none lg:h-auto lg:min-h-0 lg:flex-1">
-            <MemoryPanel machine={machine} snap={snap} />
+          <div
+            className={cn(
+              "order-4 shrink-0 lg:order-none lg:min-h-0",
+              memoryMinimized && "lg:mt-3",
+              memoryMinimized ? "h-auto lg:flex-none" : "h-[252px] lg:flex-1"
+            )}
+          >
+            <MemoryPanel
+              machine={machine}
+              snap={snap}
+              minimized={memoryMinimized}
+              onToggleMinimize={() => setMemoryMinimized((v) => !v)}
+            />
           </div>
         </div>
 
@@ -261,14 +276,21 @@ export default function App() {
         {/* ---------------- right column: cpu + console ---------------- */}
         <div ref={rightRef} className="contents lg:flex lg:min-h-0 lg:min-w-0 lg:flex-1 lg:flex-col">
           <div
-            className="order-3 shrink-0 lg:order-none lg:min-h-0 lg:overflow-y-auto"
-            style={{ flex: `0 0 ${split.cpu}%` }}
+            className={cn(
+              "order-3 shrink-0 lg:order-none lg:min-h-0 lg:overflow-y-auto",
+              cpuMinimized && "lg:flex-none"
+            )}
+            style={cpuMinimized ? undefined : { flex: `0 0 ${split.cpu}%` }}
           >
-            <CpuPanel snap={snap} />
+            <CpuPanel
+              snap={snap}
+              minimized={cpuMinimized}
+              onToggleMinimize={() => setCpuMinimized((v) => !v)}
+            />
           </div>
 
           {/* cpu / console splitter */}
-          <div className="order-3 hidden lg:order-none lg:block">
+          <div className={cn("order-3 hidden lg:order-none lg:block", cpuMinimized && "lg:hidden")}>
             <Splitter
               dir="v"
               onStart={beginDrag("cpu")}
@@ -277,7 +299,12 @@ export default function App() {
             />
           </div>
 
-          <div className="order-2 flex h-[340px] min-h-0 flex-col lg:order-none lg:h-auto lg:flex-1">
+          <div
+            className={cn(
+              "order-2 flex h-[340px] min-h-0 flex-col lg:order-none lg:h-auto lg:flex-1",
+              cpuMinimized && "lg:mt-3"
+            )}
+          >
             <ConsolePanel machine={machine} snap={snap} />
           </div>
         </div>

@@ -1,5 +1,5 @@
 import { useMemo, useState } from "react";
-import { MemoryStick, ChevronLeft, ChevronRight, LocateFixed } from "lucide-react";
+import { MemoryStick, ChevronLeft, ChevronRight, ChevronDown, ChevronUp, LocateFixed } from "lucide-react";
 import type { Machine, Snapshot } from "../emulator/machine";
 import { cn, hex } from "../utils";
 
@@ -21,7 +21,17 @@ function parseHex(s: string, fallback: number): number {
   return Number.isFinite(v) ? v & 0xffff : fallback;
 }
 
-export default function MemoryPanel({ machine, snap }: { machine: Machine; snap: Snapshot }) {
+export default function MemoryPanel({
+  machine,
+  snap,
+  minimized,
+  onToggleMinimize,
+}: {
+  machine: Machine;
+  snap: Snapshot;
+  minimized: boolean;
+  onToggleMinimize: () => void;
+}) {
   const [segMode, setSegMode] = useState<SegMode>("DS");
   const [customSeg, setCustomSeg] = useState("0800");
   const [offStr, setOffStr] = useState("0000");
@@ -61,7 +71,7 @@ export default function MemoryPanel({ machine, snap }: { machine: Machine; snap:
           <MemoryStick size={12} className="text-sky-400/80" />
           <span className="panel-title">Memory</span>
         </div>
-        <div className="ml-auto flex flex-wrap items-center gap-1.5">
+        {!minimized && <div className="ml-auto flex flex-wrap items-center gap-1.5">
           {/* segment preset */}
           <div className="flex overflow-hidden rounded-md border border-white/10">
             {SEG_ORDER.map((s) => (
@@ -104,10 +114,21 @@ export default function MemoryPanel({ machine, snap }: { machine: Machine; snap:
           <button onClick={followSP} title="Follow stack pointer" className="grid h-[26px] w-[26px] place-items-center rounded-md border border-white/10 bg-black/30 text-zinc-400 transition-colors hover:text-emerald-300">
             <LocateFixed size={12} />
           </button>
-        </div>
+        </div>}
+        <button
+          onClick={onToggleMinimize}
+          aria-expanded={!minimized}
+          title={minimized ? "Expand memory panel" : "Minimize memory panel"}
+          className={cn(
+            "grid h-[26px] w-[26px] place-items-center rounded-md border border-white/10 bg-black/30 text-zinc-400 transition-colors hover:text-zinc-100",
+            minimized && "ml-auto"
+          )}
+        >
+          {minimized ? <ChevronUp size={12} /> : <ChevronDown size={12} />}
+        </button>
       </header>
 
-      <div className="min-h-0 flex-1 overflow-auto p-2.5">
+      {!minimized && <div className="min-h-0 flex-1 overflow-auto p-2.5">
         <table className="w-full border-collapse font-mono text-[11.5px] leading-[1.55]">
           <tbody>
             {Array.from({ length: ROWS }).map((_, r) => {
@@ -155,14 +176,14 @@ export default function MemoryPanel({ machine, snap }: { machine: Machine; snap:
             })}
           </tbody>
         </table>
-      </div>
+      </div>}
 
-      <footer className="flex items-center justify-between border-t border-white/[0.05] px-3.5 py-1.5 font-mono text-[9px] tracking-wide text-zinc-600">
+      {!minimized && <footer className="flex items-center justify-between border-t border-white/[0.05] px-3.5 py-1.5 font-mono text-[9px] tracking-wide text-zinc-600">
         <span>1 MB address space · physical {hex(physBase, 5)}H</span>
         <span className="flex items-center gap-1.5">
           <span className="inline-block h-2 w-2 rounded-[2px] bg-sky-400/30" /> written this step
         </span>
-      </footer>
+      </footer>}
     </section>
   );
 }

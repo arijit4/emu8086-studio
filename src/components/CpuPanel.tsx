@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { Cpu, Binary, Flag } from "lucide-react";
+import { Cpu, Binary, ChevronDown, ChevronUp, Flag } from "lucide-react";
 import type { Snapshot } from "../emulator/machine";
 import { cn, hex, bin } from "../utils";
 
@@ -219,7 +219,15 @@ function FlagCell({ on }: { on: number }) {
 
 /* ---------------- panel ---------------- */
 
-export default function CpuPanel({ snap }: { snap: Snapshot }) {
+export default function CpuPanel({
+  snap,
+  minimized,
+  onToggleMinimize,
+}: {
+  snap: Snapshot;
+  minimized: boolean;
+  onToggleMinimize: () => void;
+}) {
   const [binMode, setBinMode] = useState(false);
   const r = snap.regs; // AX CX DX BX SP BP SI DI
   const s = snap.segs; // ES CS SS DS
@@ -232,22 +240,32 @@ export default function CpuPanel({ snap }: { snap: Snapshot }) {
           <Cpu size={11} className="text-emerald-400/80" />
           <span className="panel-title">Central Processing Unit</span>
         </div>
-        <button
-          onClick={() => setBinMode((v) => !v)}
-          title="Toggle hexadecimal / binary view"
-          className={cn(
-            "flex h-[22px] items-center gap-1 rounded border px-1.5 font-mono text-[9px] font-bold transition-colors",
-            binMode
-              ? "border-emerald-400/30 bg-emerald-500/10 text-emerald-300"
-              : "border-white/10 text-zinc-500 hover:text-zinc-300"
-          )}
-        >
-          <Binary size={9} />
-          {binMode ? "BIN" : "HEX"}
-        </button>
+        <div className="flex items-center gap-1.5">
+          {!minimized && <button
+            onClick={() => setBinMode((v) => !v)}
+            title="Toggle hexadecimal / binary view"
+            className={cn(
+              "flex h-[22px] items-center gap-1 rounded border px-1.5 font-mono text-[9px] font-bold transition-colors",
+              binMode
+                ? "border-emerald-400/30 bg-emerald-500/10 text-emerald-300"
+                : "border-white/10 text-zinc-500 hover:text-zinc-300"
+            )}
+          >
+            <Binary size={9} />
+            {binMode ? "BIN" : "HEX"}
+          </button>}
+          <button
+            onClick={onToggleMinimize}
+            aria-expanded={!minimized}
+            title={minimized ? "Expand CPU panel" : "Minimize CPU panel"}
+            className="grid h-[22px] w-[22px] place-items-center rounded border border-white/10 text-zinc-500 transition-colors hover:text-zinc-300"
+          >
+            {minimized ? <ChevronDown size={11} /> : <ChevronUp size={11} />}
+          </button>
+        </div>
       </header>
 
-      <div className="space-y-2 px-2.5 py-2">
+      {!minimized && <div className="space-y-2 px-2.5 py-2">
         {/* general registers */}
         <GeneralTable regs={r} binMode={binMode} />
 
@@ -290,7 +308,7 @@ export default function CpuPanel({ snap }: { snap: Snapshot }) {
           </p>
           <FlagTable flags={snap.flags} />
         </div>
-      </div>
+      </div>}
     </section>
   );
 }
