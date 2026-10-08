@@ -10,7 +10,7 @@ is to provide a modern and user-friendly environment for developing and testing
 assembly language programs for the Intel 8086 microprocessor.
 ![img.png](img.png)
 > [!WARNING]
-> This project is mostly made with help of AI and still in early stages of development.
+> This project is still in early stages of development.
 > Some features may not work as expected and some features may be missing.
 > Please report any issues you encounter or feature request you have
 > [here](https://github.com/arijit4/emu8086-studio/issues/new).
