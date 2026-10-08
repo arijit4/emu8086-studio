@@ -18,6 +18,7 @@
     "@codemirror/view": "^6.43.13",
     "@lezer/highlight": "^1.2.5",
     "@replit/codemirror-vim": "^6.4.0",
+    "@tauri-apps/plugin-shell": "^2.4.1",
     "@uiw/react-codemirror": "^4.25.12",
     "clsx": "2.1.1",
     "lucide-react": "^1.52.0",

@@ -10,6 +10,20 @@ export default function UpdateNotice({ release, onDismiss }: Props) {
   if (!release) return null;
 
   const dismiss = onDismiss;
+  const releaseUrl = release.html_url || RELEASES_URL;
+  const openRelease = async (event: React.MouseEvent<HTMLAnchorElement>) => {
+    event.preventDefault();
+
+    if ("__TAURI_INTERNALS__" in window) {
+      const { open } = await import("@tauri-apps/plugin-shell");
+      await open(releaseUrl);
+    } else {
+      const opened = window.open(releaseUrl, "_blank", "noopener,noreferrer");
+      if (!opened) window.location.assign(releaseUrl);
+    }
+
+    dismiss();
+  };
 
   return (
     <div
@@ -52,10 +66,10 @@ export default function UpdateNotice({ release, onDismiss }: Props) {
             Later
           </button>
           <a
-            href={release.html_url || RELEASES_URL}
+            href={releaseUrl}
             target="_blank"
             rel="noreferrer"
-            onClick={dismiss}
+            onClick={openRelease}
             className="flex items-center gap-1.5 rounded-lg border border-emerald-400/30 bg-emerald-500/15 px-3 py-2 text-[11px] font-semibold text-emerald-300 transition-colors hover:bg-emerald-500/25"
           >
             View release

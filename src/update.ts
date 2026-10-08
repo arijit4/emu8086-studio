@@ -3,7 +3,6 @@ import packageJson from "../package.json";
 
 export const RELEASES_URL = "https://github.com/arijit4/emu8086-studio/releases";
 const LATEST_RELEASE_API = "https://api.github.com/repos/arijit4/emu8086-studio/releases/latest";
-const DISMISSED_RELEASE_KEY = "emu8086.dismissed-release";
 
 export interface GitHubRelease {
   tag_name: string;
@@ -82,15 +81,12 @@ export function useUpdateCheck() {
   }, []);
 
   useEffect(() => {
-    void checkForUpdate(false);
+    void checkForUpdate(true);
   }, [checkForUpdate]);
 
   const dismissRelease = useCallback(() => {
-    if (release) {
-      localStorage.setItem(DISMISSED_RELEASE_KEY, release.tag_name);
-      setShowNotice(false);
-    }
-  }, [release]);
+    setShowNotice(false);
+  }, []);
 
   return { release, showNotice, checking, verdict, checkForUpdate, dismissRelease };
 }
