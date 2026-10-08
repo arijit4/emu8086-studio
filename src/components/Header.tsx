@@ -1,11 +1,14 @@
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import {
   Play, Pause, StepForward, StepBack, RotateCcw, Hammer, FolderOpen, ChevronDown,
   Gauge, Check,
+  Settings, Sun, Moon, Monitor, Minus, Plus, RefreshCw,
 } from "lucide-react";
 import type { Snapshot } from "../emulator/machine";
 import type { Example } from "../examples";
 import { cn, fmtSpeed } from "../utils";
+
+type Theme = "dark" | "light" | "system";
 
 function Logo() {
   return (
@@ -29,6 +32,7 @@ interface BtnProps {
   pulse?: boolean;
 }
 
+// @ts-ignore
 function Btn({ icon, label, onClick, disabled, variant = "ghost", title, pulse }: BtnProps) {
   return (
     <button
@@ -47,7 +51,7 @@ function Btn({ icon, label, onClick, disabled, variant = "ghost", title, pulse }
       )}
     >
       <span className={cn(pulse && !disabled && "dot-pulse")}>{icon}</span>
-      <span className="hidden sm:inline">{label}</span>
+      {/*<span className="hidden sm:inline">{label}</span>*/}
     </button>
   );
 }
@@ -75,13 +79,43 @@ interface Props {
   examples: Example[];
   activeExample: string;
   onPickExample: (e: Example) => void;
+  theme: Theme;
+  onTheme: (theme: Theme) => void;
+  editorFontSize: number;
+  onEditorFontSize: (size: number) => void;
+  updateAvailable: boolean;
+  checkingForUpdate: boolean;
+  updateVerdict: string | null;
+  onCheckForUpdate: () => void;
 }
 
 export default function Header(p: Props) {
-  const [open, setOpen] = useState(false);
+  const [examplesOpen, setExamplesOpen] = useState(false);
+  const [settingsOpen, setSettingsOpen] = useState(false);
+  const examplesRef = useRef<HTMLDivElement>(null);
+  const settingsRef = useRef<HTMLDivElement>(null);
   const st = STATUS_STYLE[p.snap.status];
   const running = p.snap.status === "running";
   const waiting = p.snap.status === "waiting";
+
+  useEffect(() => {
+    if (!examplesOpen && !settingsOpen) return;
+
+    const handlePointerDown = (event: PointerEvent) => {
+      const target = event.target;
+      if (!(target instanceof Node)) return;
+
+      if (examplesOpen && !examplesRef.current?.contains(target)) {
+        setExamplesOpen(false);
+      }
+      if (settingsOpen && !settingsRef.current?.contains(target)) {
+        setSettingsOpen(false);
+      }
+    };
+
+    document.addEventListener("pointerdown", handlePointerDown);
+    return () => document.removeEventListener("pointerdown", handlePointerDown);
+  }, [examplesOpen, settingsOpen]);
 
   return (
     <header className="relative z-30 flex h-14 shrink-0 items-center gap-2.5 border-b border-white/[0.06] bg-black/40 px-3 backdrop-blur-md sm:px-4">
@@ -133,7 +167,6 @@ export default function Header(p: Props) {
           {st.label}
         </div>
       </div>
-
       {/* speed */}
       <div className="hidden shrink-0 items-center gap-2.5 lg:flex" title="Emulation speed">
         <Gauge size={13} className="text-zinc-500" />
@@ -152,19 +185,17 @@ export default function Header(p: Props) {
       <div className="mx-1 hidden h-6 w-px shrink-0 bg-white/[0.07] lg:block" />
 
       {/* examples */}
-      <div className="relative shrink-0">
+      <div ref={examplesRef} className="relative shrink-0">
         <button
-          onClick={() => setOpen((v) => !v)}
+          onClick={() => setExamplesOpen((v) => !v)}
           className="flex h-8 items-center gap-2 rounded-lg border border-white/10 bg-white/[0.03] px-2.5 text-[11px] font-semibold text-zinc-300 transition-colors hover:border-white/20 hover:bg-white/[0.07] hover:text-zinc-100"
         >
           <FolderOpen size={13} className="text-zinc-500" />
           <span className="hidden max-w-40 truncate sm:inline">{p.activeExample}</span>
-          <ChevronDown size={12} className={cn("text-zinc-500 transition-transform", open && "rotate-180")} />
+          <ChevronDown size={12} className={cn("text-zinc-500 transition-transform", examplesOpen && "rotate-180")} />
         </button>
-        {open && (
-          <>
-            <button className="fixed inset-0 z-40 cursor-default" onClick={() => setOpen(false)} aria-label="close" />
-            <div className="absolute right-0 z-50 mt-2 w-80 overflow-hidden rounded-xl border border-white/10 bg-[#0d1015]/95 shadow-2xl shadow-black/60 backdrop-blur-xl">
+        {examplesOpen && (
+          <div className="absolute right-0 z-[100] mt-2 w-80 overflow-hidden rounded-xl border border-white/10 bg-[#0d1015]/95 shadow-2xl shadow-black/60 backdrop-blur-xl">
               <div className="border-b border-white/[0.06] px-3.5 py-2.5">
                 <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-zinc-500">Example programs</p>
               </div>
@@ -174,7 +205,7 @@ export default function Header(p: Props) {
                     key={ex.id}
                     onClick={() => {
                       p.onPickExample(ex);
-                      setOpen(false);
+                      setExamplesOpen(false);
                     }}
                     className="group flex w-full items-start gap-2.5 rounded-lg px-2.5 py-2 text-left transition-colors hover:bg-emerald-500/[0.08]"
                   >
@@ -191,8 +222,98 @@ export default function Header(p: Props) {
                   </button>
                 ))}
               </div>
-            </div>
-          </>
+          </div>
+        )}
+      </div>
+
+      <div ref={settingsRef} className="relative shrink-0">
+        <button
+          onClick={() => setSettingsOpen((v) => !v)}
+          aria-label="Open settings"
+          aria-expanded={settingsOpen}
+          title="Settings"
+          className="relative grid h-8 w-8 place-items-center rounded-lg border border-white/10 bg-white/[0.03] text-zinc-400 transition-colors hover:border-white/20 hover:bg-white/[0.07] hover:text-zinc-100"
+        >
+          <Settings size={14} className={cn(settingsOpen && "rotate-45 transition-transform")} />
+          {p.updateAvailable && <span className="absolute right-1 top-1 h-1.5 w-1.5 rounded-full bg-emerald-400 shadow-[0_0_7px_rgba(52,211,153,0.9)]" />}
+        </button>
+        {settingsOpen && (
+          <div className="absolute right-0 z-[100] mt-2 w-72 rounded-xl border border-white/10 bg-[#0d1015]/95 p-3.5 shadow-2xl shadow-black/60 backdrop-blur-xl">
+              <div className="mb-3 border-b border-white/[0.06] pb-2.5">
+                <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-zinc-500">Settings</p>
+              </div>
+              <div className="mb-4">
+                <div className="mb-2 flex items-center justify-between">
+                  <span className="text-[12px] font-medium text-zinc-200">Theme</span>
+                  <span className="text-[10px] uppercase tracking-wider text-zinc-600">{p.theme}</span>
+                </div>
+                <div className="grid grid-cols-3 gap-1.5">
+                  {([
+                    ["dark", Moon, "Dark"],
+                    ["light", Sun, "Light"],
+                    ["system", Monitor, "System"],
+                  ] as const).map(([value, Icon, label]) => (
+                    <button
+                      key={value}
+                      onClick={() => p.onTheme(value)}
+                      className={cn(
+                        "flex flex-col items-center gap-1 rounded-lg border px-2 py-2 text-[10px] transition-colors",
+                        p.theme === value
+                          ? "border-emerald-400/30 bg-emerald-500/10 text-emerald-300"
+                          : "border-white/10 text-zinc-500 hover:bg-white/[0.06] hover:text-zinc-300"
+                      )}
+                    >
+                      <Icon size={14} />
+                      {label}
+                    </button>
+                  ))}
+                </div>
+              </div>
+              <div className="mb-4">
+                <div className="mb-2 flex items-center justify-between">
+                  <span className="text-[12px] font-medium text-zinc-200">Editor font size</span>
+                  <span className="font-mono text-[10px] text-zinc-500">{p.editorFontSize}px</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <button
+                    onClick={() => p.onEditorFontSize(Math.max(9, p.editorFontSize - 1))}
+                    aria-label="Decrease editor font size"
+                    className="grid h-7 w-7 place-items-center rounded-md border border-white/10 text-zinc-400 hover:bg-white/[0.06] hover:text-zinc-200"
+                  >
+                    <Minus size={12} />
+                  </button>
+                  <input
+                    type="range"
+                    min={9}
+                    max={24}
+                    value={p.editorFontSize}
+                    onChange={(e) => p.onEditorFontSize(Number(e.target.value))}
+                    className="slider min-w-0 flex-1"
+                    aria-label="Editor font size"
+                  />
+                  <button
+                    onClick={() => p.onEditorFontSize(Math.min(24, p.editorFontSize + 1))}
+                    aria-label="Increase editor font size"
+                    className="grid h-7 w-7 place-items-center rounded-md border border-white/10 text-zinc-400 hover:bg-white/[0.06] hover:text-zinc-200"
+                  >
+                    <Plus size={12} />
+                  </button>
+                </div>
+              </div>
+              <button
+                onClick={p.onCheckForUpdate}
+                disabled={p.checkingForUpdate}
+                className="flex w-full items-center justify-between rounded-lg border border-white/10 px-2.5 py-2 text-left text-[11px] font-semibold text-zinc-300 transition-colors hover:bg-white/[0.06] disabled:opacity-50"
+              >
+                <span>{p.checkingForUpdate ? "Checking for updates..." : "Check for updates"}</span>
+                <RefreshCw size={13} className={cn(p.checkingForUpdate && "animate-spin")} />
+              </button>
+              {p.updateVerdict && (
+                <p className="mt-2 text-[10px] leading-relaxed text-zinc-500" role="status">
+                  {p.updateVerdict}
+                </p>
+              )}
+          </div>
         )}
       </div>
     </header>

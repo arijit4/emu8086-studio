@@ -1,93 +1,27 @@
-import { useEffect, useState } from "react";
 import { ExternalLink, PackageOpen, X } from "lucide-react";
-import packageJson from "../../package.json";
+import { RELEASES_URL, type GitHubRelease } from "../update";
 
-const RELEASES_URL = "https://github.com/arijit4/emu8086-studio/releases";
-const LATEST_RELEASE_API = "https://api.github.com/repos/arijit4/emu8086-studio/releases/latest";
-const DISMISSED_RELEASE_KEY = "emu8086.dismissed-release";
-
-interface GitHubRelease {
-  tag_name: string;
-  name: string;
-  html_url: string;
-  assets: Array<{ name: string }>;
+interface Props {
+  release: GitHubRelease | null;
+  onDismiss: () => void;
 }
 
-interface Version {
-  major: number;
-  minor: number;
-  patch: number;
-}
-
-function parseVersion(value: string): Version | null {
-  const match = value.match(/(?:^|[^0-9])v?(\d+)\.(\d+)\.(\d+)(?:[^0-9]|$)/i);
-  return match ? { major: Number(match[1]), minor: Number(match[2]), patch: Number(match[3]) } : null;
-}
-
-function releaseVersion(release: GitHubRelease): Version | null {
-  return (
-    parseVersion(release.tag_name) ??
-    parseVersion(release.name) ??
-    release.assets.map((asset) => parseVersion(asset.name)).find((version): version is Version => version !== null) ??
-    null
-  );
-}
-
-function isNewer(candidate: Version, current: Version): boolean {
-  if (candidate.major !== current.major) return candidate.major > current.major;
-  if (candidate.minor !== current.minor) return candidate.minor > current.minor;
-  return candidate.patch > current.patch;
-}
-
-export default function UpdateNotice() {
-  const [release, setRelease] = useState<GitHubRelease | null>(null);
-
-  useEffect(() => {
-    const controller = new AbortController();
-    const currentVersion = parseVersion(packageJson.version);
-
-    if (!currentVersion) return () => controller.abort();
-
-    const checkForUpdate = async () => {
-      try {
-        const response = await fetch(LATEST_RELEASE_API, {
-          headers: { Accept: "application/vnd.github+json" },
-          signal: controller.signal,
-        });
-        if (!response.ok) return;
-
-        const latest = (await response.json()) as GitHubRelease;
-        const latestVersion = releaseVersion(latest);
-        const dismissedRelease = localStorage.getItem(DISMISSED_RELEASE_KEY);
-
-        if (latestVersion && isNewer(latestVersion, currentVersion) && dismissedRelease !== latest.tag_name) {
-          setRelease(latest);
-        }
-      } catch (error) {
-        if (!(error instanceof DOMException && error.name === "AbortError")) {
-          console.warn("Unable to check for app updates.", error);
-        }
-      }
-    };
-
-    void checkForUpdate();
-    return () => controller.abort();
-  }, []);
-
+export default function UpdateNotice({ release, onDismiss }: Props) {
   if (!release) return null;
 
-  const dismiss = () => {
-    localStorage.setItem(DISMISSED_RELEASE_KEY, release.tag_name);
-    setRelease(null);
-  };
+  const dismiss = onDismiss;
 
   return (
-    <div className="fixed inset-0 z-[100] grid place-items-center bg-black/60 p-4 backdrop-blur-sm">
+    <div
+      className="fixed inset-0 z-[100] grid place-items-center bg-black/60 p-4 backdrop-blur-sm"
+      onClick={dismiss}
+    >
       <div
         role="dialog"
         aria-modal="true"
         aria-labelledby="update-title"
         className="relative w-full max-w-md rounded-2xl border border-emerald-400/25 bg-[#0d1015]/95 p-5 shadow-2xl shadow-black/70"
+        onClick={(event) => event.stopPropagation()}
       >
         <button
           onClick={dismiss}

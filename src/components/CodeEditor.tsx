@@ -49,6 +49,8 @@ interface Props {
   onRunShortcut: () => void;
   onStepShortcut?: () => void;
   onViewReady?: (view: EditorView) => void;
+  fontSize: number;
+  theme: "dark" | "light";
 }
 
 export default function CodeEditor({
@@ -60,6 +62,8 @@ export default function CodeEditor({
   onRunShortcut,
   onStepShortcut,
   onViewReady,
+  fontSize,
+  theme,
 }: Props) {
   const viewRef = useRef<EditorView | null>(null);
   const vimCompartment = useMemo(() => new Compartment(), []);
@@ -73,7 +77,7 @@ export default function CodeEditor({
     () => [
       vimCompartment.of(initialVim.current ? vim({ status: true }) : []),
       search({ top: false }),
-      asmLanguage(),
+      asmLanguage(theme),
       execLineField,
       Prec.highest(
         keymap.of([
@@ -95,7 +99,7 @@ export default function CodeEditor({
       ),
       EditorView.lineWrapping,
     ],
-    [vimCompartment]
+    [theme, vimCompartment]
   );
 
   /* hot-swap vim bindings without nuking editor state / undo history */
@@ -129,6 +133,7 @@ export default function CodeEditor({
       extensions={extensions}
       height="100%"
       className="h-full"
+      style={{ "--editor-font-size": `${fontSize}px` } as React.CSSProperties}
       theme="none"
       basicSetup={{
         lineNumbers: true,

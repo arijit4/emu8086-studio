@@ -11,6 +11,7 @@ import ConsolePanel from "./components/ConsolePanel";
 import Splitter from "./components/Splitter";
 import UpdateNotice from "./components/UpdateNotice";
 import { cn, hex, fmtCount } from "./utils";
+import { useUpdateCheck } from "./update";
 
 const SPEEDS = [1, 2, 3, 10, 100, 1000, 15000, 2000000];
 
@@ -19,6 +20,9 @@ const DEFAULTS = { col: 58, editor: 64, cpu: 46 };
 const MIN_PCT = 18;
 const MAX_PCT = 82;
 const LS_KEY = "emu8086.layout";
+const THEME_KEY = "emu8086.theme";
+const FONT_SIZE_KEY = "emu8086.editor-font-size";
+type Theme = "dark" | "light" | "system";
 
 const clampPct = (v: number) => Math.min(MAX_PCT, Math.max(MIN_PCT, v));
 
@@ -32,9 +36,42 @@ export default function App() {
   const [activeExample, setActiveExample] = useState(EXAMPLES[0].title);
   const [speedIdx, setSpeedIdx] = useState(1);
   const [vimOn, setVimOn] = useState(false);
+  const [theme, setTheme] = useState<Theme>(() => {
+    const stored = localStorage.getItem(THEME_KEY);
+    return stored === "light" || stored === "system" ? stored : "dark";
+  });
+  const [resolvedTheme, setResolvedTheme] = useState<"dark" | "light">(() =>
+    window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light"
+  );
+  const [editorFontSize, setEditorFontSize] = useState(() => {
+    const stored = Number(localStorage.getItem(FONT_SIZE_KEY));
+    return Number.isFinite(stored) ? Math.min(24, Math.max(9, stored)) : 11;
+  });
   const [memoryMinimized, setMemoryMinimized] = useState(false);
   const [cpuMinimized, setCpuMinimized] = useState(false);
   const viewRef = useRef<EditorView | null>(null);
+  const { release, showNotice, checking, verdict, checkForUpdate, dismissRelease } = useUpdateCheck();
+
+  useEffect(() => {
+    const mediaQuery = window.matchMedia("(prefers-color-scheme: dark)");
+    const applyTheme = () => {
+      const resolvedTheme = theme === "system" ? (mediaQuery.matches ? "dark" : "light") : theme;
+      setResolvedTheme(resolvedTheme);
+      document.documentElement.dataset.theme = resolvedTheme;
+    };
+
+    applyTheme();
+    if (theme === "system") {
+      mediaQuery.addEventListener("change", applyTheme);
+    }
+    localStorage.setItem(THEME_KEY, theme);
+
+    return () => mediaQuery.removeEventListener("change", applyTheme);
+  }, [theme]);
+
+  useEffect(() => {
+    localStorage.setItem(FONT_SIZE_KEY, String(editorFontSize));
+  }, [editorFontSize]);
 
   /* ---------- resizable layout ---------- */
   const [split, setSplit] = useState(() => {
@@ -120,7 +157,7 @@ export default function App() {
 
   return (
     <div className="relative flex h-screen flex-col overflow-hidden bg-[#07090c] text-zinc-300">
-      <UpdateNotice />
+      <UpdateNotice release={showNotice ? release : null} onDismiss={dismissRelease} />
       {/* background decor */}
       <div className="bg-grid pointer-events-none absolute inset-0" />
       <div className="glow-emerald pointer-events-none absolute -top-40 left-1/2 h-[420px] w-[720px] -translate-x-1/2" />
@@ -140,6 +177,14 @@ export default function App() {
         examples={EXAMPLES}
         activeExample={activeExample}
         onPickExample={pickExample}
+        theme={theme}
+        onTheme={setTheme}
+        editorFontSize={editorFontSize}
+        onEditorFontSize={setEditorFontSize}
+        updateAvailable={release !== null}
+        checkingForUpdate={checking}
+        updateVerdict={verdict}
+        onCheckForUpdate={() => void checkForUpdate(true)}
       />
 
       {/*
@@ -214,6 +259,8 @@ export default function App() {
                 onRunShortcut={onRun}
                 onStepShortcut={() => machine.step()}
                 onViewReady={(v) => (viewRef.current = v)}
+                fontSize={editorFontSize}
+                theme={resolvedTheme}
               />
             </div>
 

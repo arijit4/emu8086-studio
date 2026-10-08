@@ -87,7 +87,7 @@ export const asm8086 = StreamLanguage.define<AsmState>({
   },
 });
 
-export const asmHighlight = HighlightStyle.define([
+const darkHighlight = HighlightStyle.define([
   { tag: tags.comment, color: "#4b5563", fontStyle: "italic" },
   { tag: tags.string, color: "#bef264" },
   { tag: tags.number, color: "#5eead4" },
@@ -100,6 +100,19 @@ export const asmHighlight = HighlightStyle.define([
   { tag: tags.invalid, color: "#f87171" },
 ]);
 
-export function asmLanguage(): Extension {
-  return [asm8086, syntaxHighlighting(asmHighlight)];
+const lightHighlight = HighlightStyle.define([
+  { tag: tags.comment, color: "#64748b", fontStyle: "italic" },
+  { tag: tags.string, color: "#15803d" },
+  { tag: tags.number, color: "#0f766e" },
+  { tag: tags.keyword, color: "#7c3aed", fontWeight: "500" },
+  { tag: tags.atom, color: "#0369a1", fontWeight: "500" },
+  { tag: tags.typeName, color: "#b45309" },
+  { tag: tags.labelName, color: "#be185d" },
+  { tag: tags.operator, color: "#a21caf" },
+  { tag: tags.punctuation, color: "#64748b" },
+  { tag: tags.invalid, color: "#dc2626" },
+]);
+
+export function asmLanguage(theme: "dark" | "light" = "dark"): Extension {
+  return [asm8086, syntaxHighlighting(theme === "light" ? lightHighlight : darkHighlight)];
 }
