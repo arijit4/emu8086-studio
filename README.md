@@ -1,4 +1,9 @@
 <h2 style="text-align: center;">emu8086 Studio</h2>
+## emu8086 Studio
+![Download Counter](https://img.shields.io/github/downloads/arijit4/emu8086-studio/total?logo=github&style=for-the-badge&color=blue)
+![Build Passes](https://img.shields.io/badge/build-passing-brightgreen?logo=github&style=for-the-badge)
+
+-------
 
 This project is being developed as an alternative to the __OG *emu8086*__
 which have been discontinued long long time ago. The goal of this project
