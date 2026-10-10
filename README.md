@@ -23,11 +23,13 @@ Features supported out-of-the-box:
 | Integrated memory and CPU visualization | ✅              | ✅       |
 | Complex assembly code simulation        | ✅              | ✅       |
 | Variable emulation speed                | ✅              | ✅       |
+| Working with local files                | ✅              | ✅       |
+| Autosave                                | ❌              | ❌       |
+| Run without saving to disk              | ✅              | ❌       |
 | `STEP FORWORD`, `PAUSE`, `RESUME`       | ✅              | ✅       |
 | `STEP BACK`                             | ✅              | ❌       |
-| Token level syntax highlighting         | ✅              | ❌       |
+| Syntax highlighting                     | ✅              | ⚠️      |
 | VIM keybindings                         | ✅              | ❌       |
 | Dark theme                              | ✅              | ❌       |
-| Run without saving to disk              | ✅              | ❌       |
 | Built-in examples to learn from         | ✅              | ❌       |
 | Code autoformatting `Ctrl + Alt + f`    | ✅              | ❌       |
