@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from "react";
+import { getVersion } from "@tauri-apps/api/app";
 import {
   Play, Pause, StepForward, StepBack, RotateCcw, Hammer, File, FolderOpen, Download, ChevronDown,
   Gauge, Check,
@@ -126,6 +127,7 @@ export default function Header(p: Props) {
   const [fileOpen, setFileOpen] = useState(false);
   const [examplesOpen, setExamplesOpen] = useState(false);
   const [settingsOpen, setSettingsOpen] = useState(false);
+  const [appVersion, setAppVersion] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const fileRef = useRef<HTMLDivElement>(null);
   const settingsRef = useRef<HTMLDivElement>(null);
@@ -138,6 +140,12 @@ export default function Header(p: Props) {
   const st = STATUS_STYLE[p.snap.status];
   const running = p.snap.status === "running";
   const waiting = p.snap.status === "waiting";
+
+  useEffect(() => {
+    getVersion()
+      .then(setAppVersion)
+      .catch((error) => console.warn("Unable to determine the app version.", error));
+  }, []);
 
   useEffect(() => {
     if (!fileOpen && !settingsOpen) return;
@@ -261,9 +269,11 @@ export default function Header(p: Props) {
         <Logo />
         <div className="leading-tight">
           <h1 className="font-display text-[15px] font-semibold tracking-tight text-zinc-100">
-            emu<span className="text-emerald-400">8086</span>
+            asm<span className="text-emerald-400">8086</span>
           </h1>
-          <p className="text-[9px] font-medium uppercase tracking-[0.3em] text-zinc-500">studio</p>
+          <p className="text-[9px] font-medium uppercase tracking-[0.3em] text-zinc-500">
+            {appVersion ? `v${appVersion}` : "version"}
+          </p>
         </div>
       </div>
 

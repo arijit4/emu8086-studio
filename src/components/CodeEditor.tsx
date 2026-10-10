@@ -1,6 +1,13 @@
 import { useEffect, useMemo, useRef } from "react";
 import CodeMirror from "@uiw/react-codemirror";
-import { Compartment, Prec, StateEffect, StateField, type Extension } from "@codemirror/state";
+import {
+  Compartment,
+  EditorSelection,
+  Prec,
+  StateEffect,
+  StateField,
+  type Extension,
+} from "@codemirror/state";
 import { Decoration, EditorView, keymap, type DecorationSet } from "@codemirror/view";
 import { autocompletion, completionKeymap, type CompletionSource } from "@codemirror/autocomplete";
 import { search } from "@codemirror/search";
@@ -39,6 +46,19 @@ export function jumpToLine(view: EditorView | null, line: number) {
     effects: EditorView.scrollIntoView(pos.from, { y: "center" }),
   });
   view.focus();
+}
+
+function mapPosition(
+  source: string,
+  formatted: string,
+  position: number,
+  sourceDoc: EditorView["state"]["doc"],
+  formattedDoc: EditorView["state"]["doc"]
+) {
+  const sourceLine = sourceDoc.lineAt(Math.min(position, source.length));
+  const formattedLine = formattedDoc.line(Math.min(sourceLine.number, formattedDoc.lines));
+  const column = Math.min(position - sourceLine.from, formattedLine.length);
+  return Math.min(formattedLine.from + column, formatted.length);
 }
 
 interface Props {
@@ -138,8 +158,18 @@ export default function CodeEditor({
               const source = view.state.doc.toString();
               const formatted = formatRef.current(source);
               if (formatted !== source) {
+                const formattedDoc = view.state.toText(formatted);
                 view.dispatch({
                   changes: { from: 0, to: view.state.doc.length, insert: formatted },
+                  selection: EditorSelection.create(
+                    view.state.selection.ranges.map((range) =>
+                      EditorSelection.range(
+                        mapPosition(source, formatted, range.anchor, view.state.doc, formattedDoc),
+                        mapPosition(source, formatted, range.head, view.state.doc, formattedDoc)
+                      )
+                    ),
+                    view.state.selection.mainIndex
+                  ),
                 });
               }
               return true;

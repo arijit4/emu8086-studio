@@ -1,8 +1,8 @@
 import { useCallback, useEffect, useState } from "react";
 import packageJson from "../package.json";
 
-export const RELEASES_URL = "https://github.com/arijit4/emu8086-studio/releases";
-const LATEST_RELEASE_API = "https://api.github.com/repos/arijit4/emu8086-studio/releases/latest";
+export const RELEASES_URL = "https://github.com/arijit4/asm8086/releases";
+const LATEST_RELEASE_API = "https://api.github.com/repos/arijit4/asm8086/releases/latest";
 
 export interface GitHubRelease {
   tag_name: string;
