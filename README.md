@@ -24,7 +24,6 @@ Features supported out-of-the-box:
 | Complex assembly code simulation        | ✅              | ✅       |
 | Variable emulation speed                | ✅              | ✅       |
 | Working with local files                | ✅              | ✅       |
-| Autosave                                | ❌              | ❌       |
 | Run without saving to disk              | ✅              | ❌       |
 | `STEP FORWORD`, `PAUSE`, `RESUME`       | ✅              | ✅       |
 | `STEP BACK`                             | ✅              | ❌       |
@@ -33,3 +32,5 @@ Features supported out-of-the-box:
 | Dark theme                              | ✅              | ❌       |
 | Built-in examples to learn from         | ✅              | ❌       |
 | Code autoformatting `Ctrl + Alt + f`    | ✅              | ❌       |
+| Meaningful error messages               | ✅              | ❌       |
+| Code auto-completion                    | ✅              | ❌       |
