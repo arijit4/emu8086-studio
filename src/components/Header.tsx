@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import {
-  Play, Pause, StepForward, StepBack, RotateCcw, Hammer, FolderOpen, ChevronDown,
+  Play, Pause, StepForward, StepBack, RotateCcw, Hammer, File, FolderOpen, Download, ChevronDown,
   Gauge, Check,
   Settings, Sun, Moon, Monitor, Minus, Plus, RefreshCw,
 } from "lucide-react";
@@ -9,6 +9,35 @@ import type { Example } from "../examples";
 import { cn, fmtSpeed } from "../utils";
 
 type Theme = "dark" | "light" | "system";
+
+interface SavePickerWindow extends Window {
+  showSaveFilePicker?: (options?: {
+    suggestedName?: string;
+    types?: Array<{
+      description?: string;
+      accept: Record<string, string[]>;
+    }>;
+  }) => Promise<{
+    createWritable: () => Promise<{
+      write: (data: string) => Promise<void>;
+      close: () => Promise<void>;
+    }>;
+  }>;
+  showOpenFilePicker?: (options?: {
+    multiple?: boolean;
+    types?: Array<{
+      description?: string;
+      accept: Record<string, string[]>;
+    }>;
+  }) => Promise<Array<{
+    name: string;
+    getFile: () => Promise<File>;
+    createWritable: () => Promise<{
+      write: (data: string) => Promise<void>;
+      close: () => Promise<void>;
+    }>;
+  }>>;
+}
 
 function Logo() {
   return (
@@ -79,6 +108,10 @@ interface Props {
   examples: Example[];
   activeExample: string;
   onPickExample: (e: Example) => void;
+  code: string;
+  onOpenCode: (code: string, fileName: string) => void;
+  onNewFile: () => void;
+  isExampleOpen: boolean;
   theme: Theme;
   onTheme: (theme: Theme) => void;
   editorFontSize: number;
@@ -90,22 +123,31 @@ interface Props {
 }
 
 export default function Header(p: Props) {
+  const [fileOpen, setFileOpen] = useState(false);
   const [examplesOpen, setExamplesOpen] = useState(false);
   const [settingsOpen, setSettingsOpen] = useState(false);
-  const examplesRef = useRef<HTMLDivElement>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const fileRef = useRef<HTMLDivElement>(null);
   const settingsRef = useRef<HTMLDivElement>(null);
+  const openedFileRef = useRef<{
+    createWritable: () => Promise<{
+      write: (data: string) => Promise<void>;
+      close: () => Promise<void>;
+    }>;
+  } | null>(null);
   const st = STATUS_STYLE[p.snap.status];
   const running = p.snap.status === "running";
   const waiting = p.snap.status === "waiting";
 
   useEffect(() => {
-    if (!examplesOpen && !settingsOpen) return;
+    if (!fileOpen && !settingsOpen) return;
 
     const handlePointerDown = (event: PointerEvent) => {
       const target = event.target;
       if (!(target instanceof Node)) return;
 
-      if (examplesOpen && !examplesRef.current?.contains(target)) {
+      if (fileOpen && !fileRef.current?.contains(target)) {
+        setFileOpen(false);
         setExamplesOpen(false);
       }
       if (settingsOpen && !settingsRef.current?.contains(target)) {
@@ -115,7 +157,103 @@ export default function Header(p: Props) {
 
     document.addEventListener("pointerdown", handlePointerDown);
     return () => document.removeEventListener("pointerdown", handlePointerDown);
-  }, [examplesOpen, settingsOpen]);
+  }, [fileOpen, settingsOpen]);
+
+  const saveAsCode = async () => {
+    const baseName = p.activeExample.trim().replace(/\.[^/.]+$/, "").replace(/[<>:"/\\|?*\u0000-\u001f]/g, "_") || "main";
+    const picker = (window as SavePickerWindow).showSaveFilePicker;
+
+    if (!picker) {
+      window.alert("Saving to a chosen location is not supported by this browser. Please use a Chromium-based browser.");
+      return;
+    }
+
+    try {
+      const handle = await picker({
+        suggestedName: `${baseName}.asm`,
+        types: [{ description: "Assembly", accept: { "text/plain": [".asm"] } }],
+      });
+      openedFileRef.current = handle;
+      const writable = await handle.createWritable();
+      await writable.write(p.code);
+      await writable.close();
+      setFileOpen(false);
+    } catch (error) {
+      if (error instanceof DOMException && error.name === "AbortError") return;
+      console.error("Unable to save the assembly file.", error);
+      window.alert("Unable to save the assembly file.");
+    }
+  };
+
+  const saveCode = async () => {
+    if (!openedFileRef.current) {
+      await saveAsCode();
+      return;
+    }
+
+    try {
+      const writable = await openedFileRef.current.createWritable();
+      await writable.write(p.code);
+      await writable.close();
+      setFileOpen(false);
+    } catch (error) {
+      console.error("Unable to save the opened assembly file.", error);
+    }
+  };
+
+  const createNewFile = () => {
+    openedFileRef.current = null;
+    p.onNewFile();
+    setFileOpen(false);
+  };
+
+  const openFile = async () => {
+    const openPicker = (window as SavePickerWindow).showOpenFilePicker;
+    if (!openPicker) {
+      fileInputRef.current?.click();
+      setFileOpen(false);
+      return;
+    }
+
+    try {
+      const [handle] = await openPicker({
+        multiple: false,
+        types: [{ description: "Assembly or text", accept: { "text/plain": [".asm", ".txt"] } }],
+      });
+      if (!handle) return;
+      const file = await handle.getFile();
+      openedFileRef.current = handle;
+      p.onOpenCode(await file.text(), file.name);
+      setFileOpen(false);
+    } catch (error) {
+      if (error instanceof DOMException && error.name === "AbortError") return;
+      console.error("Unable to open the assembly file.", error);
+    }
+  };
+
+  const handleFileChange = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    event.target.value = "";
+    if (!file) return;
+    openedFileRef.current = null;
+    const text = await file.text();
+    p.onOpenCode(text, file.name);
+  };
+
+  useEffect(() => {
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (!(event.ctrlKey || event.metaKey) || event.key.toLowerCase() !== "s") return;
+      event.preventDefault();
+      if (event.shiftKey) {
+        void saveAsCode();
+      } else if (!p.isExampleOpen) {
+        void saveCode();
+      }
+    };
+
+    document.addEventListener("keydown", handleKeyDown);
+    return () => document.removeEventListener("keydown", handleKeyDown);
+  });
 
   return (
     <header className="relative z-30 flex h-14 shrink-0 items-center gap-2.5 border-b border-white/[0.06] bg-black/40 px-3 backdrop-blur-md sm:px-4">
@@ -184,47 +322,89 @@ export default function Header(p: Props) {
 
       <div className="mx-1 hidden h-6 w-px shrink-0 bg-white/[0.07] lg:block" />
 
-      {/* examples */}
-      <div ref={examplesRef} className="relative shrink-0">
+      {/* file menu */}
+      <div ref={fileRef} className="relative shrink-0">
         <button
-          onClick={() => setExamplesOpen((v) => !v)}
+          onClick={() => {
+            setFileOpen((v) => !v);
+            setExamplesOpen(false);
+          }}
+          aria-expanded={fileOpen}
           className="flex h-8 items-center gap-2 rounded-lg border border-white/10 bg-white/[0.03] px-2.5 text-[11px] font-semibold text-zinc-300 transition-colors hover:border-white/20 hover:bg-white/[0.07] hover:text-zinc-100"
         >
-          <FolderOpen size={13} className="text-zinc-500" />
-          <span className="hidden max-w-40 truncate sm:inline">{p.activeExample}</span>
-          <ChevronDown size={12} className={cn("text-zinc-500 transition-transform", examplesOpen && "rotate-180")} />
+          <File size={13} className="text-zinc-500" />
+          <ChevronDown size={12} className={cn("text-zinc-500 transition-transform", fileOpen && "rotate-180")} />
         </button>
-        {examplesOpen && (
-          <div className="absolute right-0 z-[100] mt-2 w-80 overflow-hidden rounded-xl border border-white/10 bg-[#0d1015]/95 shadow-2xl shadow-black/60 backdrop-blur-xl">
-              <div className="border-b border-white/[0.06] px-3.5 py-2.5">
-                <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-zinc-500">Example programs</p>
-              </div>
-              <div className="max-h-80 overflow-y-auto p-1.5">
-                {p.examples.map((ex) => (
-                  <button
-                    key={ex.id}
-                    onClick={() => {
-                      p.onPickExample(ex);
-                      setExamplesOpen(false);
-                    }}
-                    className="group flex w-full items-start gap-2.5 rounded-lg px-2.5 py-2 text-left transition-colors hover:bg-emerald-500/[0.08]"
-                  >
-                    <span className="mt-0.5 grid h-5 w-5 shrink-0 place-items-center rounded border border-white/10 bg-white/[0.04] font-mono text-[9px] text-zinc-500 group-hover:border-emerald-400/30 group-hover:text-emerald-400">
-                      {ex.id.replace("ex", "")}
-                    </span>
-                    <span className="min-w-0 flex-1">
-                      <span className="flex items-center gap-1.5 text-[12px] font-medium text-zinc-200">
-                        {ex.title}
-                        {ex.title === p.activeExample && <Check size={11} className="text-emerald-400" />}
-                      </span>
-                      <span className="block truncate font-mono text-[10px] text-zinc-500">{ex.tag}</span>
-                    </span>
-                  </button>
-                ))}
-              </div>
+        {fileOpen && (
+          <div className="absolute right-0 z-[100] mt-2 w-56 overflow-visible rounded-xl border border-white/10 bg-[#0d1015]/95 p-1.5 shadow-2xl shadow-black/60 backdrop-blur-xl">
+            <button onClick={createNewFile} className="flex w-full items-center gap-2 rounded-lg px-2.5 py-2 text-left text-[12px] text-zinc-300 hover:bg-white/[0.07] hover:text-zinc-100">
+              <File size={14} className="ml-0.5 mr-0.5 text-zinc-500" />
+              New file
+            </button>
+            <button onClick={openFile} className="flex w-full items-center gap-2 rounded-lg px-2.5 py-2 text-left text-[12px] text-zinc-300 hover:bg-white/[0.07] hover:text-zinc-100">
+              <FolderOpen size={14} className="ml-0.5 mr-0.5 text-zinc-500" />
+              Open
+            </button>
+            <button
+              onClick={() => void saveCode()}
+              disabled={p.isExampleOpen}
+              title={p.isExampleOpen ? "Save is unavailable while an example is open" : "Save (Ctrl+S)"}
+              className="flex w-full items-center gap-2 rounded-lg px-2.5 py-2 text-left text-[12px] text-zinc-300 hover:bg-white/[0.07] hover:text-zinc-100 disabled:cursor-not-allowed disabled:opacity-35 disabled:hover:bg-transparent"
+            >
+              <Download size={14} className="ml-0.5 mr-0.5 text-zinc-500" />
+              <span className="flex-1">Save</span>
+              <kbd className="font-mono text-[9px] text-zinc-600">Ctrl+S</kbd>
+            </button>
+            <button onClick={() => void saveAsCode()} className="flex w-full items-center gap-2 rounded-lg px-2.5 py-2 text-left text-[12px] text-zinc-300 hover:bg-white/[0.07] hover:text-zinc-100">
+              <Download size={14} className="ml-0.5 mr-0.5 text-zinc-500" />
+              <span className="flex-1">Save as</span>
+              <kbd className="font-mono text-[9px] text-zinc-600">Ctrl+Shift+S</kbd>
+            </button>
+            <div className="relative">
+              <button
+                onClick={() => setExamplesOpen((v) => !v)}
+                className="flex w-full items-center gap-2 rounded-lg px-2.5 py-2 text-left text-[12px] text-zinc-300 hover:bg-white/[0.07] hover:text-zinc-100"
+              >
+                <File size={14} className="ml-0.5 mr-0.5 text-zinc-500" />
+                <span className="flex-1">Examples</span>
+                <ChevronDown size={12} className={cn("text-zinc-500 transition-transform", examplesOpen && "rotate-180")} />
+              </button>
+              {examplesOpen && (
+                <div className="absolute right-full top-0 mr-1 w-80 overflow-hidden rounded-xl border border-white/10 bg-[#0d1015]/95 p-1.5 shadow-2xl shadow-black/60 backdrop-blur-xl">
+                  <div className="border-b border-white/[0.06] px-2.5 py-2">
+                    <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-zinc-500">Example programs</p>
+                  </div>
+                  <div className="max-h-80 overflow-y-auto">
+                    {p.examples.map((ex) => (
+                      <button
+                        key={ex.id}
+                        onClick={() => {
+                          p.onPickExample(ex);
+                          setFileOpen(false);
+                          setExamplesOpen(false);
+                        }}
+                        className="group flex w-full items-start gap-2.5 rounded-lg px-2.5 py-2 text-left transition-colors hover:bg-emerald-500/[0.08]"
+                      >
+                        <span className="mt-0.5 grid h-5 w-5 shrink-0 place-items-center rounded border border-white/10 bg-white/[0.04] font-mono text-[9px] text-zinc-500 group-hover:border-emerald-400/30 group-hover:text-emerald-400">
+                          {ex.id.replace("ex", "")}
+                        </span>
+                        <span className="min-w-0 flex-1">
+                          <span className="flex items-center gap-1.5 text-[12px] font-medium text-zinc-200">
+                            {ex.title}
+                            {ex.title === p.activeExample && <Check size={11} className="text-emerald-400" />}
+                          </span>
+                          <span className="block truncate font-mono text-[10px] text-zinc-500">{ex.tag}</span>
+                        </span>
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
           </div>
         )}
       </div>
+      <input ref={fileInputRef} type="file" accept=".asm,.txt,text/plain" className="hidden" onChange={handleFileChange} />
 
       <div ref={settingsRef} className="relative shrink-0">
         <button

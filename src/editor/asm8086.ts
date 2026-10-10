@@ -17,6 +17,96 @@ interface AsmState {
   labeled: boolean;
 }
 
+const BLOCK_OPENERS = new Set(["PROC", "SEGMENT", "MACRO"]);
+const BLOCK_CLOSERS = new Set(["ENDP", "ENDS", "ENDM"]);
+const SECTION_DIRECTIVES = new Set([".DATA", ".CODE", ".CONST", ".STACK"]);
+
+export const ASM_COMPLETION_WORDS = [
+  ...new Set([...MNEMONICS, ...REGS, ...DIRECTIVES, ...TYPE_OPS, ...SECTION_DIRECTIVES]),
+];
+
+function splitComment(line: string): [string, string] {
+  let quote: "'" | '"' | null = null;
+  for (let i = 0; i < line.length; i += 1) {
+    const char = line[i];
+    if (quote) {
+      if (char === quote) quote = null;
+    } else if (char === "'" || char === '"') {
+      quote = char;
+    } else if (char === ";") {
+      return [line.slice(0, i), line.slice(i)];
+    }
+  }
+  return [line, ""];
+}
+
+function normalizeCode(code: string): string {
+  let result = "";
+  let quote: "'" | '"' | null = null;
+  let pendingSpace = false;
+
+  for (const char of code.trim()) {
+    if (quote) {
+      result += char;
+      if (char === quote) quote = null;
+      continue;
+    }
+    if (char === "'" || char === '"') {
+      if (pendingSpace && result) result += " ";
+      pendingSpace = false;
+      quote = char;
+      result += char;
+    } else if (/\s/.test(char)) {
+      pendingSpace = true;
+    } else if (char === ",") {
+      result = result.trimEnd();
+      result += ",";
+      pendingSpace = true;
+    } else {
+      if (pendingSpace && result) result += " ";
+      pendingSpace = false;
+      result += char;
+    }
+  }
+
+  return result.trim();
+}
+
+/**
+ * Applies a predictable MASM-style layout without changing instruction text,
+ * quoted strings, or comments.
+ */
+export function formatAssembly(source: string): string {
+  let indentLevel = 0;
+  let section = "";
+
+  return source
+    .split("\n")
+    .map((line) => {
+      const [rawCode, rawComment] = splitComment(line);
+      const code = normalizeCode(rawCode);
+      if (!code) return rawComment ? rawComment.trim() : "";
+
+      const words = code.split(/\s+/);
+      const first = words[0].toUpperCase();
+      const second = words[1]?.toUpperCase();
+      const hasLabel = /^[A-Za-z_.$?][\w.$?]*:/.test(code);
+      const closesBlock = BLOCK_CLOSERS.has(first) || BLOCK_CLOSERS.has(second ?? "");
+      const opensBlock = BLOCK_OPENERS.has(first) || BLOCK_OPENERS.has(second ?? "");
+
+      if (closesBlock) indentLevel = Math.max(0, indentLevel - 1);
+      if (SECTION_DIRECTIVES.has(first)) section = first;
+
+      const isTopLevel = hasLabel || first.startsWith(".") || closesBlock || first === "END";
+      const indent = isTopLevel ? 0 : indentLevel || (section === ".DATA" ? 1 : 0);
+      const formatted = `${" ".repeat(indent * 4)}${code}${rawComment ? ` ${rawComment.trim()}` : ""}`;
+
+      if (opensBlock) indentLevel += 1;
+      return formatted;
+    })
+    .join("\n");
+}
+
 export const asm8086 = StreamLanguage.define<AsmState>({
   name: "asm8086",
   startState: () => ({ labeled: false }),

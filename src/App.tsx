@@ -5,6 +5,7 @@ import { Machine, type Snapshot } from "./emulator/machine";
 import { EXAMPLES, type Example } from "./examples";
 import Header from "./components/Header";
 import CodeEditor, { jumpToLine } from "./components/CodeEditor";
+import { formatAssembly } from "./editor/asm8086";
 import CpuPanel from "./components/CpuPanel";
 import MemoryPanel from "./components/MemoryPanel";
 import ConsolePanel from "./components/ConsolePanel";
@@ -34,8 +35,10 @@ export default function App() {
   const [snap, setSnap] = useState<Snapshot>(() => machine.snapshot());
   const [code, setCode] = useState(EXAMPLES[0].code);
   const [activeExample, setActiveExample] = useState(EXAMPLES[0].title);
-  const [speedIdx, setSpeedIdx] = useState(1);
+  const [isExampleOpen, setIsExampleOpen] = useState(true);
+  const [speedIdx, setSpeedIdx] = useState(3);
   const [vimOn, setVimOn] = useState(false);
+  const [completionOn, setCompletionOn] = useState(true);
   const [theme, setTheme] = useState<Theme>(() => {
     const stored = localStorage.getItem(THEME_KEY);
     return stored === "light" || stored === "system" ? stored : "dark";
@@ -145,7 +148,24 @@ export default function App() {
   const pickExample = (ex: Example) => {
     setCode(ex.code);
     setActiveExample(ex.title);
+    setIsExampleOpen(true);
     machine.setSource(ex.code);
+    machine.assemble();
+  };
+
+  const openCode = (nextCode: string, fileName: string) => {
+    setCode(nextCode);
+    setActiveExample(fileName.replace(/\.(?:asm|txt)$/i, "") || "Untitled");
+    setIsExampleOpen(false);
+    machine.setSource(nextCode);
+    machine.assemble();
+  };
+
+  const newFile = () => {
+    setCode("");
+    setActiveExample("Untitled");
+    setIsExampleOpen(false);
+    machine.setSource("");
     machine.assemble();
   };
 
@@ -156,7 +176,10 @@ export default function App() {
       : null;
 
   return (
-    <div className="relative flex h-screen flex-col overflow-hidden bg-[#07090c] text-zinc-300">
+    <div
+      className="relative flex h-screen flex-col overflow-hidden bg-[#07090c] text-zinc-300"
+      onContextMenu={(event) => event.preventDefault()}
+    >
       <UpdateNotice release={showNotice ? release : null} onDismiss={dismissRelease} />
       {/* background decor */}
       <div className="bg-grid pointer-events-none absolute inset-0" />
@@ -177,6 +200,10 @@ export default function App() {
         examples={EXAMPLES}
         activeExample={activeExample}
         onPickExample={pickExample}
+        code={code}
+        onOpenCode={openCode}
+        onNewFile={newFile}
+        isExampleOpen={isExampleOpen}
         theme={theme}
         onTheme={setTheme}
         editorFontSize={editorFontSize}
@@ -193,7 +220,7 @@ export default function App() {
       */}
       <main
         ref={mainRef}
-        className="relative z-10 grid min-h-0 flex-1 grid-cols-1 gap-3 overflow-y-auto p-3 lg:flex lg:gap-0 lg:overflow-hidden"
+        className="relative z-10 grid min-h-0 flex-1 grid-cols-1 gap-3 overflow-y-auto overscroll-contain p-3 lg:flex lg:gap-0 lg:overflow-hidden"
       >
         {/* ---------------- left column: editor + memory ---------------- */}
         <div
@@ -232,11 +259,11 @@ export default function App() {
               </div>
               <div className="flex shrink-0 items-center gap-2">
                 <span className="hidden font-mono text-[9px] tracking-wider text-zinc-600 sm:block">
-                  {snap.codeBytes}B code · {snap.dataBytes}B data · MASM / 8086
+                  {snap.codeBytes}B code · {snap.dataBytes}B data
                 </span>
                 <button
                   onClick={() => setVimOn((v) => !v)}
-                  title="Toggle Vim keybindings (hjkl, dd, yy, /, :)"
+                  title="Toggle Vim keybindings"
                   className={cn(
                     "flex h-6 items-center rounded-md border px-1.5 font-mono text-[9px] font-bold tracking-wider transition-colors",
                     vimOn
@@ -245,6 +272,18 @@ export default function App() {
                   )}
                 >
                   VIM
+                </button>
+                <button
+                  onClick={() => setCompletionOn((v) => !v)}
+                  title="Toggle code completion"
+                  className={cn(
+                    "flex h-6 items-center rounded-md border px-1.5 font-mono text-[9px] font-bold tracking-wider transition-colors",
+                    completionOn
+                      ? "border-emerald-400/30 bg-emerald-500/10 text-emerald-300"
+                      : "border-white/10 text-zinc-500 hover:text-zinc-300"
+                  )}
+                >
+                  COMPLETION
                 </button>
               </div>
             </header>
@@ -256,8 +295,10 @@ export default function App() {
                 execLine={execLine}
                 running={snap.status === "running"}
                 vimEnabled={vimOn}
+                completionEnabled={completionOn}
                 onRunShortcut={onRun}
                 onStepShortcut={() => machine.step()}
+                onFormatShortcut={formatAssembly}
                 onViewReady={(v) => (viewRef.current = v)}
                 fontSize={editorFontSize}
                 theme={resolvedTheme}
@@ -393,7 +434,7 @@ export default function App() {
             <span className="text-emerald-400/80">{fmtCount(snap.cycles)}</span> instr
           </span>
         </span>
-        <span className="hidden shrink-0 text-zinc-600 xl:block">Ctrl+Enter run · F10 step</span>
+        <span className="hidden shrink-0 text-zinc-600 xl:block">Ctrl+Enter run · F10 step · Ctrl+Alt+L format</span>
       </footer>
     </div>
   );

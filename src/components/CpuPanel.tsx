@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { Cpu, Binary, ChevronDown, ChevronUp, Flag } from "lucide-react";
 import type { Snapshot } from "../emulator/machine";
-import { cn, hex, bin } from "../utils";
+import { cn, hex, groupBin } from "../utils";
 
 /* Highlight a value only when it changed in the latest machine snapshot. */
 function useChanged(v: number, changeKey: number): boolean {
@@ -27,6 +27,7 @@ function Cell({
   changeKey,
   className,
   dim,
+  suffix,
 }: {
   value: number;
   w?: number;
@@ -34,6 +35,7 @@ function Cell({
   changeKey: number;
   className?: string;
   dim?: boolean;
+  suffix?: string;
 }) {
   const changed = useChanged(value, changeKey);
   const txt =
@@ -41,7 +43,7 @@ function Cell({
       ? hex(value, w)
       : mode === "dec"
         ? value.toString(10).padStart(w === 2 ? 3 : 5, "\u2007")
-        : bin(value, w === 2 ? 8 : 16);
+        : groupBin(value, w === 2 ? 8 : 16);
   return (
     <span
       key={value}
@@ -53,6 +55,7 @@ function Cell({
       )}
     >
       {txt}
+      {suffix}
     </span>
   );
 }
@@ -74,12 +77,8 @@ function GeneralTable({ regs, binMode, changeKey }: { regs: number[]; binMode: b
           <th className="w-[34px] py-0.5 text-left font-bold">Reg</th>
           <th className="py-0.5 text-right font-bold">{binMode ? "Binary" : "Hex"}</th>
           <th className="w-[52px] py-0.5 text-right font-bold">Dec</th>
-          {!binMode && (
-            <>
-              <th className="w-[40px] py-0.5 text-right font-bold">Hi</th>
-              <th className="w-[40px] py-0.5 text-right font-bold">Lo</th>
-            </>
-          )}
+          <th className={cn("py-0.5 text-right font-bold", binMode ? "w-[72px]" : "w-[40px]")}>Hi</th>
+          <th className={cn("py-0.5 text-right font-bold", binMode ? "w-[72px]" : "w-[40px]")}>Lo</th>
         </tr>
       </thead>
       <tbody>
@@ -88,23 +87,37 @@ function GeneralTable({ regs, binMode, changeKey }: { regs: number[]; binMode: b
           return (
             <tr key={g.name} className="border-t border-white/[0.04] hover:bg-white/[0.03]">
               <td className="py-[3px] text-left font-bold tracking-wider text-emerald-400/70">{g.name}</td>
-              <td className="py-[3px] text-right">
-                <Cell value={v} mode={binMode ? "bin" : "hex"} changeKey={changeKey} />
-                {!binMode && <span className="text-zinc-600">h</span>}
+              <td className="whitespace-nowrap py-[3px] text-right">
+                <Cell
+                  value={v}
+                  mode={binMode ? "bin" : "hex"}
+                  changeKey={changeKey}
+                  suffix={binMode ? undefined : "h"}
+                />
               </td>
-              <td className="py-[3px] text-right">
+              <td className="whitespace-nowrap py-[3px] text-right">
                 <Cell value={v} mode="dec" changeKey={changeKey} className="text-zinc-400" dim />
               </td>
-              {!binMode && (
-                <>
-                  <td className="py-[3px] text-right">
-                    <Cell value={(v >> 8) & 0xff} w={2} mode="hex" changeKey={changeKey} className="text-zinc-400" dim />
-                  </td>
-                  <td className="py-[3px] text-right">
-                    <Cell value={v & 0xff} w={2} mode="hex" changeKey={changeKey} className="text-zinc-400" dim />
-                  </td>
-                </>
-              )}
+              <td className="whitespace-nowrap py-[3px] text-right">
+                <Cell
+                  value={(v >> 8) & 0xff}
+                  w={2}
+                  mode={binMode ? "bin" : "hex"}
+                  changeKey={changeKey}
+                  className="text-zinc-400"
+                  dim
+                />
+              </td>
+              <td className="whitespace-nowrap py-[3px] text-right">
+                <Cell
+                  value={v & 0xff}
+                  w={2}
+                  mode={binMode ? "bin" : "hex"}
+                  changeKey={changeKey}
+                  className="text-zinc-400"
+                  dim
+                />
+              </td>
             </tr>
           );
         })}
@@ -145,8 +158,7 @@ function PairTable({
               {r.name}
             </td>
             <td className="py-[3px] text-right">
-              <Cell value={r.value} mode="hex" changeKey={changeKey} />
-              <span className="text-zinc-600">h</span>
+              <Cell value={r.value} mode="hex" changeKey={changeKey} suffix="h" />
             </td>
             <td className="py-[3px] text-right">
               <Cell value={r.value} mode="dec" changeKey={changeKey} className="text-zinc-400" dim />
@@ -174,7 +186,7 @@ const FLAG_DEFS: Array<{ name: string; bit: number; full: string }> = [
 
 function FlagTable({ flags, changeKey }: { flags: number; changeKey: number }) {
   return (
-    <table className="w-full table-fixed border-collapse text-center font-mono">
+    <table className="cpu-flags w-full table-fixed border-collapse text-center font-mono">
       <thead>
         <tr>
           {FLAG_DEFS.map((f) => {
@@ -277,7 +289,7 @@ export default function CpuPanel({
         </div>
       </header>
 
-      {!minimized && <div className="space-y-2 px-2.5 py-2">
+      {!minimized && <div className="min-h-0 flex-1 space-y-2 overflow-y-auto px-2.5 py-2">
         {/* general registers */}
         <GeneralTable regs={r} binMode={binMode} changeKey={changeKey} />
 
@@ -295,7 +307,7 @@ export default function CpuPanel({
               ]}
             />
           </div>
-          <div className="w-px bg-white/[0.05]" />
+          <div className="w-px border-l border-white/[0.05]" />
           <div className="flex-1">
             <PairTable
               title="Ptr"

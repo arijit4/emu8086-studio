@@ -1,4 +1,5 @@
 ## emu8086 Studio
+
 ![Download Counter](https://img.shields.io/github/downloads/arijit4/emu8086-studio/total?logo=github&style=for-the-badge&color=blue)
 ![Build Passes](https://img.shields.io/badge/build-passing-brightgreen?logo=github&style=for-the-badge)
 
@@ -29,6 +30,4 @@ Features supported out-of-the-box:
 | Dark theme                              | ✅              | ❌       |
 | Run without saving to disk              | ✅              | ❌       |
 | Built-in examples to learn from         | ✅              | ❌       |
-
-Planned features:
-- saving and loading local `.asm` files
+| Code autoformatting `Ctrl + Alt + f`    | ✅              | ❌       |

@@ -18,6 +18,7 @@ html,
 body,
 #root {
   height: 100%;
+  overscroll-behavior: none;
 }
 
 body {
@@ -27,6 +28,7 @@ body {
   font-feature-settings: "ss01", "cv05";
   -webkit-font-smoothing: antialiased;
   overflow-x: hidden;
+  overscroll-behavior-y: none;
 }
 
 html[data-theme="light"] {
@@ -36,6 +38,18 @@ html[data-theme="light"] {
   --app-text: #263238;
   --app-muted: #64748b;
   --app-border: rgba(15, 23, 42, 0.14);
+}
+
+html[data-theme="light"] * {
+  scrollbar-color: rgba(15, 23, 42, 0.28) transparent;
+}
+
+html[data-theme="light"] *::-webkit-scrollbar-thumb {
+  background: rgba(15, 23, 42, 0.24);
+}
+
+html[data-theme="light"] *::-webkit-scrollbar-thumb:hover {
+  background: rgba(15, 23, 42, 0.38);
 }
 
 html[data-theme="light"] #root > div {
@@ -81,6 +95,65 @@ html[data-theme="light"] [class*="border-white/"] {
 
 html[data-theme="light"] [class*="divide-white/"] {
   border-color: rgba(15, 23, 42, 0.14) !important;
+}
+
+html[data-theme="light"] [class*="text-emerald-"] {
+  color: #047857 !important;
+}
+
+html[data-theme="light"] [class*="border-emerald-"] {
+  border-color: rgba(4, 120, 87, 0.42) !important;
+}
+
+html[data-theme="light"] [class*="bg-emerald-"] {
+  background-color: rgba(5, 150, 105, 0.16) !important;
+}
+
+html[data-theme="light"] [class*="text-sky-"] {
+  color: #0369a1 !important;
+}
+
+html[data-theme="light"] [class*="border-sky-"] {
+  border-color: rgba(3, 105, 161, 0.42) !important;
+}
+
+html[data-theme="light"] [class*="bg-sky-"] {
+  background-color: rgba(14, 165, 233, 0.16) !important;
+}
+
+html[data-theme="light"] [class*="text-amber-"] {
+  color: #b45309 !important;
+}
+
+html[data-theme="light"] [class*="border-amber-"] {
+  border-color: rgba(180, 83, 9, 0.42) !important;
+}
+
+html[data-theme="light"] [class*="bg-amber-"] {
+  background-color: rgba(245, 158, 11, 0.18) !important;
+}
+
+html[data-theme="light"] [class*="shadow-[0_0_"][class*="rgba(16,185,129"] {
+  --tw-shadow-color: rgba(4, 120, 87, 0.28) !important;
+}
+
+html[data-theme="light"] button[class*="bg-white/"],
+html[data-theme="light"] button[class*="bg-black/"] {
+  background-color: rgba(255, 255, 255, 0.72) !important;
+}
+
+html[data-theme="light"] button[class*="hover:bg-white/"]:hover,
+html[data-theme="light"] button[class*="hover:bg-black/"]:hover {
+  background-color: #ffffff !important;
+}
+
+html[data-theme="light"] input[class*="bg-black/"],
+html[data-theme="light"] select[class*="bg-black/"] {
+  background-color: #ffffff !important;
+}
+
+html[data-theme="light"] .cpu-flags [class*="bg-black/20"] {
+  background-color: transparent !important;
 }
 
 .font-mono,
@@ -197,6 +270,21 @@ pre {
   color: #fcd34d !important;
   text-shadow: 0 0 8px rgba(251, 191, 36, 0.45);
 }
+@keyframes cell-flash-light {
+  0% {
+    color: #b45309;
+    text-shadow: 0 0 10px rgba(180, 83, 9, 0.35);
+  }
+  100% {
+    color: inherit;
+    text-shadow: none;
+  }
+}
+html[data-theme="light"] .cell-flash {
+  color: #b45309 !important;
+  text-shadow: 0 0 8px rgba(180, 83, 9, 0.3);
+  animation-name: cell-flash-light;
+}
 @keyframes panel-pulse {
   0% {
     box-shadow: 0 0 0 1px rgba(251, 191, 36, 0.35);
@@ -207,6 +295,17 @@ pre {
 }
 .panel-flash {
   animation: panel-pulse 0.6s ease-out;
+}
+html[data-theme="light"] .panel-flash {
+  animation-name: panel-pulse-light;
+}
+@keyframes panel-pulse-light {
+  0% {
+    box-shadow: 0 0 0 1px rgba(180, 83, 9, 0.38);
+  }
+  100% {
+    box-shadow: 0 0 0 1px transparent;
+  }
 }
 
 /* ---------- status dot ---------- */
@@ -311,10 +410,87 @@ html[data-theme="light"] .cm-editor .cm-activeLineGutter {
   color: #ecfdf5 !important;
 }
 
+/* completion tooltip */
+.cm-tooltip.cm-tooltip-autocomplete {
+  background: #0d1015 !important;
+  border: 1px solid rgba(255, 255, 255, 0.12) !important;
+  border-radius: 8px;
+  box-shadow: 0 12px 28px rgba(0, 0, 0, 0.35);
+  color: #d4d4d8;
+  font-family: "JetBrains Mono", ui-monospace, monospace;
+  font-size: 11px;
+  overflow: hidden;
+}
+.cm-tooltip-autocomplete > ul {
+  max-height: 220px;
+  scrollbar-color: rgba(255, 255, 255, 0.18) transparent;
+}
+.cm-tooltip-autocomplete > ul > li {
+  padding: 4px 9px;
+}
+.cm-tooltip-autocomplete > ul > li[aria-selected] {
+  background: #14532d;
+  color: #f0fdf4 !important;
+}
+.cm-tooltip-autocomplete > ul > li[aria-selected] .cm-completionLabel,
+.cm-tooltip-autocomplete > ul > li[aria-selected] .cm-completionMatchedText {
+  color: #f0fdf4 !important;
+}
+.cm-tooltip-autocomplete > ul > li[aria-selected] .cm-completionDetail {
+  color: #bbf7d0 !important;
+}
+.cm-tooltip-autocomplete .cm-completionLabel {
+  color: #d4d4d8;
+}
+.cm-tooltip-autocomplete .cm-completionMatchedText {
+  color: #6ee7b7;
+  text-decoration: none;
+}
+.cm-tooltip-autocomplete .cm-completionDetail {
+  color: #71717a;
+  font-style: normal;
+  margin-left: 1em;
+}
+
+html[data-theme="light"] .cm-tooltip.cm-tooltip-autocomplete {
+  background: #ffffff !important;
+  border-color: rgba(15, 23, 42, 0.14) !important;
+  box-shadow: 0 12px 28px rgba(15, 23, 42, 0.16);
+  color: #263238;
+}
+html[data-theme="light"] .cm-tooltip-autocomplete > ul {
+  scrollbar-color: rgba(15, 23, 42, 0.2) transparent;
+}
+html[data-theme="light"] .cm-tooltip-autocomplete > ul > li[aria-selected] {
+  background: #a7f3d0;
+  color: #14532d !important;
+}
+html[data-theme="light"] .cm-tooltip-autocomplete > ul > li[aria-selected] .cm-completionLabel,
+html[data-theme="light"] .cm-tooltip-autocomplete > ul > li[aria-selected] .cm-completionMatchedText {
+  color: #14532d !important;
+}
+html[data-theme="light"] .cm-tooltip-autocomplete > ul > li[aria-selected] .cm-completionDetail {
+  color: #166534 !important;
+}
+html[data-theme="light"] .cm-tooltip-autocomplete .cm-completionLabel {
+  color: #263238;
+}
+html[data-theme="light"] .cm-tooltip-autocomplete .cm-completionMatchedText {
+  color: #047857;
+}
+html[data-theme="light"] .cm-tooltip-autocomplete .cm-completionDetail {
+  color: #64748b;
+}
+
 /* current executing line */
 .cm-exec-line {
   background: linear-gradient(90deg, rgba(16, 185, 129, 0.14), rgba(16, 185, 129, 0.03) 70%, transparent) !important;
   box-shadow: inset 2px 0 0 #10b981;
+}
+
+html[data-theme="light"] .cm-exec-line {
+  background: linear-gradient(90deg, rgba(5, 150, 105, 0.2), rgba(5, 150, 105, 0.06) 70%, transparent) !important;
+  box-shadow: inset 2px 0 0 #047857;
 }
 
 /* ---------- vim mode & search panels (dark theme) ---------- */

@@ -2,9 +2,10 @@ import { useEffect, useMemo, useRef } from "react";
 import CodeMirror from "@uiw/react-codemirror";
 import { Compartment, Prec, StateEffect, StateField, type Extension } from "@codemirror/state";
 import { Decoration, EditorView, keymap, type DecorationSet } from "@codemirror/view";
+import { autocompletion, completionKeymap, type CompletionSource } from "@codemirror/autocomplete";
 import { search } from "@codemirror/search";
 import { vim } from "@replit/codemirror-vim";
-import { asmLanguage } from "../editor/asm8086";
+import { ASM_COMPLETION_WORDS, asmLanguage } from "../editor/asm8086";
 
 /* current-executing-line decoration */
 const setExecLine = StateEffect.define<number | null>();
@@ -46,8 +47,10 @@ interface Props {
   execLine: number | null;
   running: boolean;
   vimEnabled: boolean;
+  completionEnabled: boolean;
   onRunShortcut: () => void;
   onStepShortcut?: () => void;
+  onFormatShortcut: (source: string) => string;
   onViewReady?: (view: EditorView) => void;
   fontSize: number;
   theme: "dark" | "light";
@@ -59,23 +62,57 @@ export default function CodeEditor({
   execLine,
   running,
   vimEnabled,
+  completionEnabled,
   onRunShortcut,
   onStepShortcut,
+  onFormatShortcut,
   onViewReady,
   fontSize,
   theme,
 }: Props) {
   const viewRef = useRef<EditorView | null>(null);
   const vimCompartment = useMemo(() => new Compartment(), []);
+  const completionCompartment = useMemo(() => new Compartment(), []);
   const initialVim = useRef(vimEnabled);
+  const initialCompletion = useRef(completionEnabled);
   const runRef = useRef(onRunShortcut);
   const stepRef = useRef(onStepShortcut);
+  const formatRef = useRef(onFormatShortcut);
   runRef.current = onRunShortcut;
   stepRef.current = onStepShortcut;
+  formatRef.current = onFormatShortcut;
+
+  const completionSource = useMemo<CompletionSource>(
+    () => (context) => {
+      const word = context.matchBefore(/[A-Za-z_.$?][\w.$@?]*/);
+      if (!word && !context.explicit) return null;
+
+      const labels = new Set<string>();
+      for (const line of context.state.doc.iterLines()) {
+        const label = line.match(/^\s*([A-Za-z_.$?][\w.$@?]*):/);
+        if (label) labels.add(label[1]);
+      }
+
+      return {
+        from: word?.from ?? context.pos,
+        options: [
+          ...ASM_COMPLETION_WORDS.map((label) => ({ label, type: "keyword" })),
+          ...[...labels].map((label) => ({ label, type: "variable" })),
+        ],
+        validFor: /[A-Za-z_.$?][\w.$@?]*/,
+      };
+    },
+    []
+  );
 
   const extensions = useMemo<Extension[]>(
     () => [
       vimCompartment.of(initialVim.current ? vim({ status: true }) : []),
+      completionCompartment.of(
+        initialCompletion.current
+          ? autocompletion({ override: [completionSource] })
+          : []
+      ),
       search({ top: false }),
       asmLanguage(theme),
       execLineField,
@@ -95,11 +132,25 @@ export default function CodeEditor({
               return true;
             },
           },
+          {
+            key: "Mod-Alt-l",
+            run: (view) => {
+              const source = view.state.doc.toString();
+              const formatted = formatRef.current(source);
+              if (formatted !== source) {
+                view.dispatch({
+                  changes: { from: 0, to: view.state.doc.length, insert: formatted },
+                });
+              }
+              return true;
+            },
+          },
         ])
       ),
+      keymap.of(completionKeymap),
       EditorView.lineWrapping,
     ],
-    [theme, vimCompartment]
+    [completionCompartment, completionSource, theme, vimCompartment]
   );
 
   /* hot-swap vim bindings without nuking editor state / undo history */
@@ -108,6 +159,16 @@ export default function CodeEditor({
     if (!view) return;
     view.dispatch({ effects: vimCompartment.reconfigure(vimEnabled ? vim({ status: true }) : []) });
   }, [vimEnabled, vimCompartment]);
+
+  useEffect(() => {
+    const view = viewRef.current;
+    if (!view) return;
+    view.dispatch({
+      effects: completionCompartment.reconfigure(
+        completionEnabled ? autocompletion({ override: [completionSource] }) : []
+      ),
+    });
+  }, [completionEnabled, completionCompartment, completionSource]);
 
   useEffect(() => {
     const view = viewRef.current;
